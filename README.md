@@ -49,6 +49,4 @@ Notes and next steps
 
 The data_processor expects the raw API to include channel entries with name, value, status, and datetime in ISO format.
 I plan to add unit tests, more robust missing-data strategies, and a simple CLI or REST wrapper for batch processing.
-Contact
 
-If you need clarifications or want me to add tests, CLI, or Docker support, tell me what to prioritize.
