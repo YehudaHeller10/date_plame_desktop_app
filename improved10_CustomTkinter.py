@@ -292,7 +292,7 @@ class ResultsDialog(ctk.CTkToplevel):
 class MainWindow(ctk.CTk):
     def __init__(self):
         super().__init__()
-        self.API_TOKEN = "1a901e45-9028-44ff-bd2c-35e82407fb9b"  # Your API Token
+        self.API_TOKEN = ""  # Your API Token
         self.api_client = WeatherAPIClient(self.API_TOKEN)
         self.stations_data = []
         self.queue = queue.Queue()
@@ -511,5 +511,6 @@ def main():
 
         app.withdraw()  # Hide main window initially
         app.after(3000, show_main_window)
+
 
         app.mainloop()
