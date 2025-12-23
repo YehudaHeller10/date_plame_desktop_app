@@ -501,8 +501,12 @@ class DataEntryPage(QWidget):
         self.branches_count_general.setValidator(QIntValidator(1, 100))
         self.fronds_count_general = QLineEdit("120")
         self.fronds_count_general.setValidator(QIntValidator(10, 300))
+        # שדה נוסף: מספר אשכולות בפרוטוקול הכללי
+        self.clusters_count_general = QLineEdit("8")
+        self.clusters_count_general.setValidator(QIntValidator(1, 500))
         general_layout.addRow("מספר סנסנים לאשכול:", self.branches_count_general)
         general_layout.addRow("מספר חנטים לסנסן:", self.fronds_count_general)
+        general_layout.addRow("מספר אשכולות:", self.clusters_count_general)
         tab_widget.addTab(general_tab, "פרוטוקול כללי")
 
         # טאב פרוטוקול לפי דור
@@ -607,8 +611,11 @@ class DataEntryPage(QWidget):
             data = {'tree_age': self._get_tree_age()}
             if self.thinning_tabs.currentIndex() == 0:
                 data['protocol_type'] = 'general'
-                data['thinning'] = {'branches': int(self.branches_count_general.text()),
-                                    'fronds': int(self.fronds_count_general.text())}
+                data['thinning'] = {
+                    'branches': int(self.branches_count_general.text()),
+                    'fronds': int(self.fronds_count_general.text()),
+                    'clusters': int(self.clusters_count_general.text())
+                }
             else:
                 data['protocol_type'] = 'by_generation'
                 data['thinning'] = {
@@ -690,7 +697,7 @@ class ResultsPage(QWidget):
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.API_TOKEN = ""
+        self.API_TOKEN = "1a901e45-9028-44ff-bd2c-35e82407fb9b"
         self.api_client = WeatherAPIClient(self.API_TOKEN)
 
         self.setWindowTitle("דילול חנטי תמרים")
