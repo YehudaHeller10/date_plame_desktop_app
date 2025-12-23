@@ -1,52 +1,130 @@
-Project: Date Palm — Smart Agriculture Tools
+# Date Palm Yield Prediction - Model 1A
+## מערכת תמיכת החלטה לחקלאים - חיזוי יבול תמרים
 
-Screenshots
+---
 
-Splash screen
-This screenshot shows the application's startup splash screen.
+## מודל 1א - ניבוי יבול בצומת ההחלטה (אפריל-מאי)
 
+מודל XGBoost שמנבא יבול (ק"ג לעץ) עבור החלטת המגדל בתקופת אפריל-מאי,
+תוך שימוש בנתוני מזג אוויר מהעונה הקודמת ועד מועד ההחלטה.
+
+---
+
+## Screenshots
+
+### Splash screen
 ![Splash screen](1.png)
 
-Main application window
-Main user interface screenshot.
-
+### Main application window  
 ![Main application](2.png)
 
-Images are expected to be in the repository root next to this README.md.
+---
 
-Overview
+## שלבי הפעולה במערכת
 
-I built a small prototype suite that processes weather station data, extracts agronomic features relevant to date-palm phenology, and provides a polished desktop UI with an animated splash screen and an example forecast-visualization. The codebase is organized into small, focused modules so I can iterate quickly on algorithms and UX independently.
+### שלב 1: טעינת נתונים מטאורולוגיים
+- **WeatherAPIClient** - לקוח API לשירות המטאורולוגי הישראלי (IMS)
+- טוען נתונים היסטוריים לשלוש תקופות פיזיולוגיות:
+  - התמיינות: 1 בנובמבר (שנה קודמת) - 10 בפברואר
+  - פריחה: 11 בפברואר - 31 במרץ  
+  - דילול: 1 באפריל - 15 במאי
 
-What I implemented
+### שלב 2: עיבוד נתונים מטאורולוגיים (DataProcessor)
+- חישוב שעות חום (Degree Hours) מעל 18°C
+- חישוב לחות ממוצעת (%)
+- חישוב אידוי לפי Penman-Monteith (מ"מ)
 
-data_processor.py
+### שלב 3: קלט מהמשתמש (חקלאי)
+- גיל העץ (שנים)
+- מספר סנסנים לאשכול
+- מספר חנטים לסנסן
+- מספר אשכולות
 
-I implemented data parsing and sanitization for raw weather API responses, including timezone normalization and channel mapping.
-I added physical constants and meteorological helpers (saturation vapor pressure, vapor pressure deficit, slope of saturation curve) and a Penman–Monteith based evaporation estimate at a 10-minute resolution.
-I compute degree-hours above 18°C, clean negative sensor values, aggregate measurements, and summarize features across defined phenological periods (inflorescence differentiation, flowering, thinning, growth, June drop, ripening, harvest).
-splash_screen.py
+### שלב 4: הרצת מודל XGBoost
+- טעינת המודל מ-`xgboost_yield_model_1a.json`
+- בניית וקטור פיצ'רים (13 פיצ'רים)
+- חיזוי יבול בק"ג לעץ
 
-I created an animated QSplashScreen using PyQt6 with a stylized neural-network visual, pulsing logo, and a rotating circular loading indicator.
-The animation runs at ~60 FPS and cycles through friendly loading messages.
-main_application.py (excerpt)
+### שלב 5: הצגת תוצאות
+- גרף פעמון (Bell Curve) עם רווחי ביטחון
+- תחזית יבול מספרית
 
-I prepared a plotting routine that renders a normal-distribution forecast with shaded confidence bands and annotated mean yield.
-How to run
+---
 
-Create a Python 3.10+ virtual environment and install dependencies:
+## פיצ'רים למודל
 
-pip install pandas numpy matplotlib pyqt6 scipy
+| קטגוריה | פיצ'ר | תיאור |
+|---------|-------|--------|
+| חקלאי | Thinning_Clusters_Tree-1 | מספר אשכולות |
+| חקלאי | Thinning_Branches_Bunch-1 | סנסנים לאשכול |
+| חקלאי | Thinning_Fruitlets_Branch-1 | חנטים לסנסן |
+| חקלאי | Age | גיל העץ |
+| אקלים | T_Inf_differentiation | שעות חום - התמיינות |
+| אקלים | H_Inf_differentiation | לחות ממוצעת - התמיינות |
+| אקלים | E_Inf_differentiation | אידוי - התמיינות |
+| אקלים | T_Flowering | שעות חום - פריחה |
+| אקלים | H_Flowering | לחות ממוצעת - פריחה |
+| אקלים | E_Flowering | אידוי - פריחה |
+| אקלים | T_Thinning | שעות חום - דילול |
+| אקלים | H_Thinning | לחות ממוצעת - דילול |
+| אקלים | E_Thinning | אידוי - דילול |
 
-Show the splash example:
+---
 
-python splash_screen.py
+## קבצים
 
-Run the main application (example):
+| קובץ | תיאור |
+|------|--------|
+| `main_application.py` | האפליקציה הראשית (PyQt6) |
+| `data_processor.py` | עיבוד נתונים מטאורולוגיים |
+| `splash_screen.py` | מסך פתיחה מונפש |
+| `xgboost_yield_model_1a.json` | מודל XGBoost מאומן |
+| `volcani_logo.png` | לוגו מכון וולקני |
 
+---
+
+## הרצה
+
+```bash
 python main_application.py
-Notes and next steps
+```
 
-The data_processor expects the raw API to include channel entries with name, value, status, and datetime in ISO format.
-I plan to add unit tests, more robust missing-data strategies, and a simple CLI or REST wrapper for batch processing.
+## דרישות
 
+```
+PyQt6
+xgboost
+pandas
+numpy
+scipy
+matplotlib
+requests
+```
+
+---
+
+## Technical Implementation Details
+
+### data_processor.py
+- Data parsing and sanitization for raw weather API responses
+- Physical constants and meteorological helpers (saturation vapor pressure, vapor pressure deficit)
+- Penman–Monteith based evaporation estimate at 10-minute resolution
+- Degree-hours computation above 18°C
+- Feature aggregation across phenological periods
+
+### splash_screen.py
+- Animated QSplashScreen using PyQt6
+- Neural-network visual with pulsing logo
+- Rotating circular loading indicator
+- ~60 FPS animation with cycling messages
+
+### main_application.py
+- Modern PyQt6 desktop UI with RTL support
+- XGBoost model integration for yield prediction
+- Historical weather data loading with progress indicator
+- Bell curve visualization with confidence intervals
+- Button freezing during processing to prevent double-clicks
+
+---
+
+© מכון וולקני - ARO
