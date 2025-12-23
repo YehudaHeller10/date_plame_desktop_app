@@ -1,181 +1,149 @@
-# data_processor.py
-
-import numpy as np
 import pandas as pd
-from datetime import datetime
-
-# =========================
-# קבועים פיזיקליים
-# =========================
-RHO = 1.2  # צפיפות אוויר (kg/m³)
-CP = 1013  # קיבול חום סגולי של אוויר (J/kg°C)
-LAMBDA_V = 2.45e6  # חום כמוס של התאדות (J/kg)
-GAMMA = 0.065  # קבוע פסיכרומטרי (kPa/°C)
+import numpy as np
+import math
 
 
-# =========================
-# פונקציות חישוב אקלימיות
-# =========================
+class DataProcessor:
+    def __init__(self):
+        # קבועים פיזיקליים לחישוב אידוי (Penman-Monteith)
+        self.RHO = 1.2  # צפיפות אוויר (kg/m³)
+        self.CP = 1013  # קיבול חום סגולי (J/kg°C)
+        self.LAMBDA_V = 2.45 * 10 ** 6  # חום כמוס של אידוי
+        self.GAMMA = 0.065  # קבוע פסיכומטרי
 
-def saturation_vapor_pressure(temp_celsius):
-    """חישוב לחץ אדים רווי לפי טמפרטורה (kPa)"""
-    if pd.isna(temp_celsius):
-        return np.nan
-    return 0.6108 * np.exp((17.27 * temp_celsius) / (temp_celsius + 237.3))
+    def calculate_saturation_vapor_pressure(self, T):
+        """חישוב לחץ אדים רווי"""
+        return 0.6108 * np.exp((17.27 * T) / (T + 237.3))
 
+    def calculate_delta_slope(self, T):
+        """חישוב שיפוע עקומת לחץ האדים"""
+        es = self.calculate_saturation_vapor_pressure(T)
+        return (4098 * es) / ((T + 237.3) ** 2)
 
-def actual_vapor_pressure(rh_percent, temp_celsius):
-    """חישוב לחץ אדים בפועל לפי לחות יחסית וטמפרטורה (kPa)"""
-    if pd.isna(rh_percent) or pd.isna(temp_celsius):
-        return np.nan
-    es = saturation_vapor_pressure(temp_celsius)
-    return (rh_percent / 100) * es
+    def calculate_penman_monteith(self, row):
+        """
+        חישוב אידוי לפי פנמן-מונטית' עבור רשומה בודדת (10 דקות)
+        מבוסס על הלוגיקה מתוך Main_YS.ipynb
+        """
+        try:
+            Rn = row['Global Radiation']  # קרינה גלובלית בוואט למ"ר
+            T = row['Temperature']  # טמפרטורה בצלזיוס
+            RH = row['Relative Humidity']  # לחות יחסית באחוזים
 
+            if pd.isna(Rn) or pd.isna(T) or pd.isna(RH) or Rn < 0:
+                return 0
 
-def delta_slope(temp_celsius):
-    """שיפוע עקומת לחץ האדים הרווי (kPa/°C)"""
-    if pd.isna(temp_celsius):
-        return np.nan
-    es = saturation_vapor_pressure(temp_celsius)
-    denominator = (temp_celsius + 237.3) ** 2
-    return (4098 * es) / denominator if denominator != 0 else np.nan
+            # המרת קרינה מ-W/m2 ל-MJ/m2 ל-10 דקות
+            Rn_MJ = (Rn / 1_000_000) * 600
 
+            es = self.calculate_saturation_vapor_pressure(T)
+            ea = (RH / 100) * es
+            delta = self.calculate_delta_slope(T)
 
-def penman_monteith_evaporation(radiation_wm2, temp_celsius, rh_percent):
-    """
-    חישוב התאדות לפי נוסחת פנמן-מונטית (mm/10min)
-    """
-    if pd.isna(radiation_wm2) or pd.isna(temp_celsius) or pd.isna(rh_percent):
-        return np.nan
-    # ודא שהערכים אינם שליליים לפני החישוב
-    if radiation_wm2 < 0 or rh_percent < 0:
-        return np.nan
+            numerator = delta * Rn_MJ + self.RHO * self.CP * (es - ea) / self.LAMBDA_V
+            denominator = delta + self.GAMMA
 
-    radiation_mj_per_10min = (radiation_wm2 / 1e6) * 600  # מווט למגה-ג'ול ל-10 דקות
-    G = 0  # שטף חום קרקע מוזנח
+            return max(0, numerator / denominator)  # אידוי במ"מ ל-10 דקות
+        except Exception:
+            return 0
 
-    es = saturation_vapor_pressure(temp_celsius)
-    ea = actual_vapor_pressure(rh_percent, temp_celsius)
-    delta = delta_slope(temp_celsius)
+    def calculate_degree_hours(self, temp, threshold=18):
+        """חישוב שעות חום (מעל 18 מעלות) ביחידות של 10 דקות"""
+        if temp > threshold:
+            # כל יחידה היא 10 דקות, כלומר שישית השעה
+            return (temp - threshold) * (10 / 60)
+        return 0
 
-    # ודא שהחישובים עצמם אינם מחזירים NaN
-    if pd.isna(es) or pd.isna(ea) or pd.isna(delta):
-        return np.nan
+    def process_weather_data(self, raw_data_list, current_year):
+        """
+        מקבל רשימת נתונים גולמיים מה-API ומחזיר את הפיצ'רים למודל
+        """
+        # המרה ל-DataFrame
+        df = pd.DataFrame(raw_data_list)
 
-    numerator = delta * (radiation_mj_per_10min - G) + RHO * CP * (es - ea) / LAMBDA_V
-    denominator = delta + GAMMA
-    return numerator / denominator if denominator != 0 else np.nan
+        # התאמת שמות עמודות בהתאם ל-API של השירות המטאורולוגי
+        # שמות העמודות כאן הם דוגמה, נצטרך להתאים בדיוק למה שה-API מחזיר
+        column_map = {
+            'TD': 'Temperature',
+            'RH': 'Relative Humidity',
+            'Grad': 'Global Radiation',
+            'Time': 'Time',  # פורמט hhmm
+            'Date': 'Date'  # נניח שיש תאריך
+        }
+        # הערה: לרוב ה-API מחזיר JSON עם שדות באנגלית, נצטרך לוודא מיפוי ב-Main App
+        df.rename(columns=column_map, inplace=True)
 
+        # המרת תאריכים
+        df['Datetime'] = pd.to_datetime(df['datetime'])  # נניח שה-API מחזיר שדה datetime מלא
+        df['Date'] = df['Datetime'].dt.date
 
-# =========================
-# עיבוד נתונים ראשי
-# =========================
+        # --- חישובים לכל שורה ---
+        # 1. אידוי (Evaporation)
+        df['E_10min'] = df.apply(self.calculate_penman_monteith, axis=1)
 
-def process_weather_data_for_model(raw_data: list, year: int) -> dict:
-    """
-    פונקציית עיבוד נתוני אקלים לשימוש במודל חיזוי.
+        # 2. שעות חום (Degree Hours)
+        df['Heat_Units'] = df['Temperature'].apply(lambda x: self.calculate_degree_hours(x, 18))
 
-    שלבים עיקריים:
-    1. ניקוי וסטנדרטיזציה של שמות ערוצים
-    2. בניית DataFrame ראשי מהמדידות
-    3. חישוב שעות חום (degree hours) והתאדות
-    4. פילוח לפי תקופות פנולוגיות
-    5. אגירת מאפיינים לכל תקופה (טמפ', התאדות, לחות)
+        # --- הגדרת תקופות (לפי Main_YS.ipynb) ---
+        # התמיינות: 1 בנובמבר (שנה קודמת) - 10 בפברואר (שנה נוכחית)
+        # פריחה: 11 בפברואר - 31 במרץ
+        # דילול: 1 באפריל - 15 במאי
 
-    Args:
-        raw_data (list): רשימת תצפיות גולמיות מה-API
-        year (int): שנת היעד של היבול
+        prev_year = current_year - 1
 
-    Returns:
-        dict: מאפייני מודל לפי תקופות פנולוגיות
-    """
-    if not raw_data:
-        raise ValueError("לא התקבלו נתונים לעיבוד.")
+        periods = {
+            'Inf_differentiation': (pd.Timestamp(f'{prev_year}-11-01'), pd.Timestamp(f'{current_year}-02-10')),
+            'Flowering': (pd.Timestamp(f'{current_year}-02-11'), pd.Timestamp(f'{current_year}-03-31')),
+            'Thinning': (pd.Timestamp(f'{current_year}-04-01'), pd.Timestamp(f'{current_year}-05-15'))
+        }
 
-    # מיפוי שמות ערוצים לפורמט אחיד ותקני
-    channel_map = {
-        'TD': 'Temperature (°C)', 'Td': 'Temperature (°C)', 'TDmax': 'Temperature (°C)',
-        'TDmin': 'Temperature (°C)', 'TG': 'Temperature (°C)', 'RH': 'Relative humidity (%)',
-        'RH ': 'Relative humidity (%)', 'Grad': 'Radiation (W/m2)', 'Grad ': 'Radiation (W/m2)',
-        'Rad': 'Radiation (W/m2)', 'DiffR': 'Radiation (W/m2)', 'NIP': 'Radiation (W/m2)',
-    }
+        features = {}
 
-    # בניית רשומות מעובדות מהנתונים הגולמיים
-    records = []
-    for entry in raw_data:
-        # המרת זמן לזמן מקומי והסרת מידע על אזור זמן
-        row_date = pd.to_datetime(entry.get('datetime'), utc=True).tz_convert('Asia/Jerusalem').tz_localize(None)
-        row = {'Date': row_date}
+        for period_name, (start_date, end_date) in periods.items():
+            mask = (df['Datetime'] >= start_date) & (df['Datetime'] <= end_date)
+            period_data = df.loc[mask]
 
-        # אתחול עמודות עם NaN למקרה שלא כל המדידות קיימות בכל נקודת זמן
-        for standard_name in set(channel_map.values()):
-            row[standard_name] = np.nan
+            if period_data.empty:
+                # אם אין נתונים (למשל אנחנו בתחילת העונה), נשים 0 או ממוצע
+                features[f'T_{period_name}'] = 0
+                features[f'H_{period_name}'] = 0
+                features[f'E_{period_name}'] = 0
+            else:
+                # T_... = סכום שעות חום
+                features[f'T_{period_name}'] = period_data['Heat_Units'].sum()
+                # H_... = ממוצע לחות
+                features[f'H_{period_name}'] = period_data['Relative Humidity'].mean()
+                # E_... = סכום אידוי
+                features[f'E_{period_name}'] = period_data['E_10min'].sum()
 
-        for ch in entry.get('channels', []):
-            name = ch.get('name', '').strip()
+        return features
 
-            # הערה לעצמי כדי לא לחזור על הטעות הארורה שוב!!! : ה-API מציין ש-status=1 הוא ערוץ תקין, ו-status=2 לא תקין.
-            # יש לקבל רק מדידות עם סטטוס 1.
-            if name in channel_map and ch.get('status') == 1 and ch.get('valid', True):
-                standard_name = channel_map[name]
-                row[standard_name] = pd.to_numeric(ch.get('value'), errors='coerce')
+    def prepare_input_vector(self, user_inputs, weather_features, tree_age):
+        """
+        יוצר את השורה הסופית להכנסה למודל (X)
+        """
+        # בניית המילון הסופי בהתאם לסדר שה-XGBoost מצפה לו
+        # שמות המפתחות חייבים להיות *זהים* למה שהמודל אומן עליו
+        input_data = {
+            # נתוני חקלאי
+            'Thinning_Clusters_Tree-1': user_inputs['clusters'],  # מספר אשכולות
+            'Thinning_Branches_Bunch-1': user_inputs['branches'],  # סנסנים לאשכול
+            'Thinning_Fruitlets_Branch-1': user_inputs['fronds'],  # חנטים לסנסן (Fronds/Fruitlets)
+            'Age': tree_age,
 
-        records.append(row)
+            # נתוני מזג אוויר מחושבים
+            'T_Inf_differentiation': weather_features.get('T_Inf_differentiation', 0),
+            'H_Inf_differentiation': weather_features.get('H_Inf_differentiation', 0),
+            'E_Inf_differentiation': weather_features.get('E_Inf_differentiation', 0),
 
-    if not records:
-        raise ValueError("לא נמצאו רשומות תקינות לאחר סינון ראשוני.")
+            'T_Flowering': weather_features.get('T_Flowering', 0),
+            'H_Flowering': weather_features.get('H_Flowering', 0),
+            'E_Flowering': weather_features.get('E_Flowering', 0),
 
-    # יצירת DataFrame, מיון לפי תאריך ומילוי חורים קטנים
-    df = pd.DataFrame(records).set_index('Date').sort_index()
-    # אסטרטגיית איחוד - אם יש כפילויות תאריכים, נשתמש בממוצע
-    df = df.groupby(df.index).mean()
+            'T_Thinning': weather_features.get('T_Thinning', 0),
+            'H_Thinning': weather_features.get('H_Thinning', 0),
+            'E_Thinning': weather_features.get('E_Thinning', 0),
+        }
 
-    # חישוב שעות חום (מעל 18 מעלות), מומר ליחידות של שעה
-    df['degree_hours_10_min'] = np.where(df['Temperature (°C)'] > 18,
-                                         (df['Temperature (°C)'] - 18) * (10 / 60),
-                                         0)
-
-    # ניקוי ערכים שליליים שעשויים להיות טעויות מדידה
-    for col in ['Radiation (W/m2)', 'Relative humidity (%)']:
-        if col in df.columns:
-            df[col] = df[col].where(df[col] >= 0, np.nan)
-
-    # חישוב התאדות לפי פנמן-מונטית עבור כל שורה
-    df['Evaporation (mm/10min)'] = df.apply(
-        lambda row: penman_monteith_evaporation(
-            row.get('Radiation (W/m2)'),
-            row.get('Temperature (°C)'),
-            row.get('Relative humidity (%)')
-        ), axis=1
-    )
-
-    # הגדרת תקופות עונתיות לפי לוח שנה פנולוגי
-    periods = {
-        "Inf_differentiation": (f"{year - 1}-11-01", f"{year}-02-10"),
-        "Flowering": (f"{year}-02-11", f"{year}-03-31"),
-        "Thinning": (f"{year}-04-01", f"{year}-05-15"),
-        "Growth": (f"{year}-05-16", f"{year}-07-31"),
-        "June_Drop": (f"{year}-06-01", f"{year}-06-30"),
-        "Ripening": (f"{year}-08-01", f"{year}-08-31"),
-        "Harvest": (f"{year}-09-01", f"{year}-10-31"),
-    }
-
-    # יצירת מילון המאפיינים הסופי עבור המודל
-    features = {}
-    for name, (start, end) in periods.items():
-        sub_df = df.loc[start:end]
-        if not sub_df.empty:
-            features[f"T_{name}"] = round(sub_df['degree_hours_10_min'].sum(), 2)
-            features[f"E_{name}"] = round(sub_df['Evaporation (mm/10min)'].sum(), 2)
-            features[f"H_{name}"] = round(sub_df['Relative humidity (%)'].mean(), 2)
-        else:
-            # אם אין נתונים בתקופה, נכניס ערכי None כדי למנוע שגיאות בהמשך
-            features[f"T_{name}"] = None
-            features[f"E_{name}"] = None
-            features[f"H_{name}"] = None
-
-    # בדיקה סופית לוודא שלא כל הערכים הם None
-    if all(v is None for v in features.values()):
-        raise ValueError("העיבוד הסתיים אך לא נוצרו מאפיינים. ייתכן שהנתונים חסרים בטווחי התאריכים הנדרשים.")
-
-    return features
+        # המרה ל-DataFrame של שורה אחת
+        return pd.DataFrame([input_data])
