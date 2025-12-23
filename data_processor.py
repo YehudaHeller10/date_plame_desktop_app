@@ -8,7 +8,7 @@ class DataProcessor:
         self.RHO = 1.2  # צפיפות אוויר (kg/m³)
         self.CP = 1013  # קיבול חום סגולי (J/kg°C)
         self.LAMBDA_V = 2.45 * 10 ** 6  # חום כמוס של אידוי
-        self.GAMMA = 0.065  # קבוע פסיכומטרי
+        self.GAMMA = 0.065  # קבוע
 
     def calculate_saturation_vapor_pressure(self, T):
         """חישוב לחץ אדים רווי"""
@@ -159,7 +159,7 @@ class DataProcessor:
         # 2. שעות חום (Degree Hours)
         df['Heat_Units'] = df['Temperature'].apply(lambda x: self.calculate_degree_hours(x, 18) if pd.notna(x) else 0)
 
-        # שלב 2.6: הגדרת תקו��ות פיזיולוגיות (לפי Main_YS.ipynb)
+        # שלב 2.6: הגדרת תקופות פיזיולוגיות (לפי Main_YS.ipynb)
         # התמיינות: 1 בנובמבר (שנה קודמת) - 10 בפברואר (שנה נוכחית)
         # פריחה: 11 בפברואר - 31 במרץ
         # דילול: 1 באפריל - 15 במאי
@@ -224,17 +224,17 @@ class DataProcessor:
             current_year = datetime.now().year
 
         # חישוב חנטים לאשכול לפי הדורות
-        # אם יש פרוטוקול כללי - משתמשים באותם ערכים לכל הדורות
-        upper_fruits = user_inputs.get('upper_fronds', user_inputs.get('fronds', 120))
-        center_fruits = user_inputs.get('middle_fronds', user_inputs.get('fronds', 120))
-        lower_fruits = user_inputs.get('lower_fronds', user_inputs.get('fronds', 120))
+        # מצפים שערכים אלו עברו ולידציה בממשק (חיוביים וגדולים מאפס)
+        upper_fruits = user_inputs['upper_fronds']
+        center_fruits = user_inputs['middle_fronds']
+        lower_fruits = user_inputs['lower_fronds']
 
         # מספר אשכולות
-        bunches = user_inputs.get('clusters', 8)
+        bunches = user_inputs['clusters']
 
         # חישוב סה"כ חנטים לעץ
         # Thinning_Fruits Tree-1 = סה"כ חנטים = אשכולות * סנסנים * חנטים לסנסן
-        branches = user_inputs.get('branches', 25)
+        branches = user_inputs['branches']
         avg_fronds = (upper_fruits + center_fruits + lower_fruits) / 3
         fruits_per_tree = bunches * branches * avg_fronds
 

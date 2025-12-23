@@ -626,7 +626,7 @@ class DataEntryPage(QWidget):
         self.load_data_btn.setEnabled(not is_loading and len(self.stations_data) > 0)
         self.station_combo.setEnabled(not is_loading and len(self.stations_data) > 0)
 
-        # עדכון כפתור הניתוח - מושבת עד שנטענים נתונים מטאורולוגיים
+        # עדכון כפתור הניתוח - מושבת עד שנטענים נתונים ��טאורולוגיים
         can_analyze = not is_loading and self.weather_features is not None
         self.analyze_btn.setEnabled(can_analyze)
 
@@ -685,13 +685,17 @@ class DataEntryPage(QWidget):
         general_layout = QFormLayout(general_tab)
         general_layout.setSpacing(16)
         general_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
-        self.branches_count_general = QLineEdit("25")
+        # שדות ללא ברירות מחדל, רק placeholder
+        self.branches_count_general = QLineEdit("")
         self.branches_count_general.setValidator(QIntValidator(1, 100))
-        self.fronds_count_general = QLineEdit("120")
+        self.branches_count_general.setPlaceholderText("לדוגמה: 25")
+        self.fronds_count_general = QLineEdit("")
         self.fronds_count_general.setValidator(QIntValidator(10, 300))
+        self.fronds_count_general.setPlaceholderText("לדוגמה: 120")
         # שדה נוסף: מספר אשכולות בפרוטוקול הכללי
-        self.clusters_count_general = QLineEdit("8")
+        self.clusters_count_general = QLineEdit("")
         self.clusters_count_general.setValidator(QIntValidator(1, 500))
+        self.clusters_count_general.setPlaceholderText("לדוגמה: 8")
         general_layout.addRow("מספר סנסנים לאשכול:", self.branches_count_general)
         general_layout.addRow("מספר חנטים לסנסן:", self.fronds_count_general)
         general_layout.addRow("מספר אשכולות:", self.clusters_count_general)
@@ -714,12 +718,25 @@ class DataEntryPage(QWidget):
         generation_layout.setSpacing(12)
         generation_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
 
-        self.branches_upper = QLineEdit("22")
-        self.fronds_upper = QLineEdit("110")
-        self.branches_middle = QLineEdit("25")
-        self.fronds_middle = QLineEdit("120")
-        self.branches_lower = QLineEdit("28")
-        self.fronds_lower = QLineEdit("130")
+        # מספר אשכולות בפרוטוקול לפי דור
+        self.clusters_count_generation = QLineEdit("")
+        self.clusters_count_generation.setValidator(QIntValidator(1, 500))
+        self.clusters_count_generation.setPlaceholderText("לדוגמה: 8")
+        generation_layout.addRow("מספר אשכולות:", self.clusters_count_generation)
+
+        # שדות ללא ברירת מחדל, רק placeholders
+        self.branches_upper = QLineEdit("")
+        self.branches_upper.setPlaceholderText("לדוגמה: 22")
+        self.fronds_upper = QLineEdit("")
+        self.fronds_upper.setPlaceholderText("לדוגמה: 110")
+        self.branches_middle = QLineEdit("")
+        self.branches_middle.setPlaceholderText("לדוגמה: 25")
+        self.fronds_middle = QLineEdit("")
+        self.fronds_middle.setPlaceholderText("לדוגמה: 120")
+        self.branches_lower = QLineEdit("")
+        self.branches_lower.setPlaceholderText("לדוגמה: 28")
+        self.fronds_lower = QLineEdit("")
+        self.fronds_lower.setPlaceholderText("לדוגמה: 130")
         for w in [self.branches_upper, self.branches_middle, self.branches_lower]: w.setValidator(QIntValidator(1, 100))
         for w in [self.fronds_upper, self.fronds_middle, self.fronds_lower]: w.setValidator(QIntValidator(10, 300))
 
@@ -760,13 +777,19 @@ class DataEntryPage(QWidget):
         if isinstance(stations, list):
             self.stations_data = sorted(stations, key=lambda s: s.get('name', ''))
             station_options = [f"{s.get('name')} ({s.get('stationId')})" for s in self.stations_data]
+
             self.station_combo.clear()
             self.station_combo.addItems(station_options)
             self.station_combo.setPlaceholderText("בחר תחנה מהרשימה")
             self.station_combo.setEnabled(True)
             self.load_data_btn.setEnabled(True)
-        else:
-            self.on_api_error("פורמט נתוני התחנות אינו תקין.")
+
+            # ===== ברירת מחדל: Yotvata (stationId = 36) =====
+            default_station_id = 36
+            for i, station in enumerate(self.stations_data):
+                if station.get('stationId') == default_station_id:
+                    self.station_combo.setCurrentIndex(i)
+                    break
 
     def on_api_error(self, error_msg):
         self.data_display.setPlainText(f"❌ שגיאה: {error_msg}")
@@ -851,19 +874,39 @@ class DataEntryPage(QWidget):
             data = {'tree_age': self._get_tree_age()}
             data['weather_features'] = self.weather_features  # הוספת הפיצ'רים המטאורולוגיים
 
+            def _parse_positive_int(widget: QLineEdit, field_name: str) -> int:
+                text = widget.text().strip()
+                if not text:
+                    raise ValueError(f"יש להזין ערך בשדה: {field_name}")
+                value = int(text)
+                if value <= 0:
+                    raise ValueError(f"השדה '{field_name}' חייב להיות גדול מ-0")
+                return value
+
             if self.thinning_tabs.currentIndex() == 0:
                 data['protocol_type'] = 'general'
+                branches_val = _parse_positive_int(self.branches_count_general, "מספר סנסנים לאשכול")
+                fronds_val = _parse_positive_int(self.fronds_count_general, "מספר חנטים לסנסן")
+                clusters_val = _parse_positive_int(self.clusters_count_general, "מספר אשכולות")
                 data['thinning'] = {
-                    'branches': int(self.branches_count_general.text()),
-                    'fronds': int(self.fronds_count_general.text()),
-                    'clusters': int(self.clusters_count_general.text())
+                    'branches': branches_val,
+                    'fronds': fronds_val,
+                    'clusters': clusters_val
                 }
             else:
                 data['protocol_type'] = 'by_generation'
+                clusters_val = _parse_positive_int(self.clusters_count_generation, "מספר אשכולות")
+                upper_br = _parse_positive_int(self.branches_upper, "סנסנים לאשכול (דור עליון)")
+                upper_fr = _parse_positive_int(self.fronds_upper, "חנטים לסנסן (דור עליון)")
+                middle_br = _parse_positive_int(self.branches_middle, "סנסנים לאשכול (דור אמצעי)")
+                middle_fr = _parse_positive_int(self.fronds_middle, "חנטים לסנסן (דור אמצעי)")
+                lower_br = _parse_positive_int(self.branches_lower, "סנסנים לאשכול (דור תחתון)")
+                lower_fr = _parse_positive_int(self.fronds_lower, "חנטים לסנסן (דור תחתון)")
                 data['thinning'] = {
-                    'upper': {'branches': int(self.branches_upper.text()), 'fronds': int(self.fronds_upper.text())},
-                    'middle': {'branches': int(self.branches_middle.text()), 'fronds': int(self.fronds_middle.text())},
-                    'lower': {'branches': int(self.branches_lower.text()), 'fronds': int(self.fronds_lower.text())}
+                    'clusters': clusters_val,
+                    'upper': {'branches': upper_br, 'fronds': upper_fr},
+                    'middle': {'branches': middle_br, 'fronds': middle_fr},
+                    'lower': {'branches': lower_br, 'fronds': lower_fr}
                 }
             self.analysis_requested.emit(data)
         except (ValueError, TypeError) as e:
@@ -1074,7 +1117,7 @@ class MainWindow(QMainWindow):
             p = data['thinning']
             user_inputs = {
                 'branches': int((p['upper']['branches'] + p['middle']['branches'] + p['lower']['branches']) / 3),
-                'clusters': 8,  # ברירת מחדל
+                'clusters': p['clusters'],
                 'upper_fronds': p['upper']['branches'] * p['upper']['fronds'],
                 'middle_fronds': p['middle']['branches'] * p['middle']['fronds'],
                 'lower_fronds': p['lower']['branches'] * p['lower']['fronds'],
@@ -1122,7 +1165,7 @@ class MainWindow(QMainWindow):
             p = data['thinning']
             avg_branches = (p['upper']['branches'] + p['middle']['branches'] + p['lower']['branches']) / 3
             avg_fronds = (p['upper']['fronds'] + p['middle']['fronds'] + p['lower']['fronds']) / 3
-            fruitlets_per_tree = 8 * avg_branches * avg_fronds
+            fruitlets_per_tree = p['clusters'] * avg_branches * avg_fronds
 
         # חישוב גס: 10 גרם לפרי בממוצע
         estimated_yield = (fruitlets_per_tree * 10) / 1000  # בק"ג
