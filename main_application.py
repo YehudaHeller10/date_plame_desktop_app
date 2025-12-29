@@ -12,15 +12,15 @@ from matplotlib.figure import Figure
 from scipy.stats import norm
 
 # =====================================================================================
-#  ייבוא מסך הפתיחה ומעבד הנתונים
+#  Import splash screen and data processor
 # =====================================================================================
 from splash_screen import AnimatedSplashScreen
 from data_processor import DataProcessor
 
 # =====================================================================================
-# 1. הגדרות עיצוב וסגנון גלובליות
+# 1. Global Design and Style Settings
 # =====================================================================================
-# פלטת צבעים מודרנית ובהירה
+# Modern and bright color palette
 COLORS = {
     'primary': '#3B82F6',  # Blue 500
     'primary_dark': '#2563EB',  # Blue 600
@@ -41,13 +41,13 @@ COLORS = {
     'sidebar_text': '#E5E7EB'  # Slate 200
 }
 
-# גיליון סגנונות מרכזי (QSS)
+# Central stylesheet (QSS)
 STYLES = f"""
     QMainWindow, QDialog {{
         background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 {COLORS['background']}, stop:1 {COLORS['background_darker']});
     }}
 
-    /* --- סרגל צד --- */
+    /* --- Sidebar --- */
     QListWidget {{
         background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 {COLORS['sidebar_bg_darker']}, stop:1 {COLORS['sidebar_bg']});
         border: none;
@@ -68,7 +68,7 @@ STYLES = f"""
         background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 {COLORS['primary_light']}, stop:1 {COLORS['primary']});
         color: white;
     }}
-    /* --- הגדרות עבור QSplitter --- */
+    /* --- QSplitter Settings --- */
     QSplitter::handle {{
         background-color: {COLORS['border']};
     }}
@@ -79,7 +79,7 @@ STYLES = f"""
         height: 1px;
     }}
 
-    /* --- לשוניות (Tabs) --- */
+    /* --- Tabs --- */
     QTabWidget::pane {{
         border: 1px solid {COLORS['border']};
         border-top: none;
@@ -107,7 +107,7 @@ STYLES = f"""
         color: {COLORS['text']};
     }}
 
-    /* --- כפתורים --- */
+    /* --- Buttons --- */
     QPushButton {{
         background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 {COLORS['primary']}, stop:1 {COLORS['primary_dark']});
         color: white;
@@ -129,12 +129,12 @@ STYLES = f"""
         color: #E5E7EB;
     }}
 
-    /* --- עיצוב משופר לכפתור הניתוח --- */
+    /* --- Enhanced styling for analyze button --- */
     QPushButton#AnalyzeButton {{
         background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 {COLORS['secondary']}, stop:1 #059669);
         font-size: 16px;
         padding: 14px 30px;
-        margin: 20px 0 10px 0; /* מרווח עליון גדול יותר להפרדה מהטאבים */
+        margin: 20px 0 10px 0; /* Larger top margin for separation from tabs */
         min-width: 200px;
     }}
     QPushButton#AnalyzeButton:hover {{
@@ -145,7 +145,7 @@ STYLES = f"""
         color: #E5E7EB;
     }}
 
-    /* --- כרטיסים וקונטיינרים --- */
+    /* --- Cards and Containers --- */
     QFrame#Card, QGroupBox {{
         background: {COLORS['card']};
         border-radius: 16px;
@@ -163,7 +163,7 @@ STYLES = f"""
         font-weight: 700;
     }}
 
-    /* --- תוויות --- */
+    /* --- Labels --- */
     QLabel#PageTitle {{
         color: {COLORS['text']};
         font-size: 28px;
@@ -184,7 +184,7 @@ STYLES = f"""
         margin-bottom: 10px;
     }}
 
-    /* --- שדות קלט --- */
+    /* --- Input Fields --- */
     QLineEdit, QComboBox {{
         border: 1px solid {COLORS['border']};
         border-radius: 8px;
@@ -201,7 +201,7 @@ STYLES = f"""
         border: none;
     }}
 
-    /* --- רכיבים נוספים --- */
+    /* --- Additional Components --- */
     QTextEdit {{
         border: 1px solid {COLORS['border']};
         border-radius: 8px;
@@ -211,7 +211,7 @@ STYLES = f"""
         min-height: 80px;
     }}
 
-    /* --- עיצוב עבור אזור גלילה --- */
+    /* --- Scroll Area Styling --- */
     QScrollArea {{
         border: none;
         background-color: transparent;
@@ -245,10 +245,10 @@ STYLES = f"""
 
 
 # =====================================================================================
-# 2. מחלקות עזר ורכיבים
+# 2. Utility Classes and Components
 # =====================================================================================
 def apply_shadow(widget, blur_radius=25, x_offset=0, y_offset=4, color=QColor(100, 100, 100, 30)):
-    """פונקציית עזר להחלת אפקט צל על ווידג'טים"""
+    """Helper function to apply shadow effect to widgets"""
     shadow = QGraphicsDropShadowEffect()
     shadow.setBlurRadius(blur_radius)
     shadow.setXOffset(x_offset)
@@ -259,8 +259,8 @@ def apply_shadow(widget, blur_radius=25, x_offset=0, y_offset=4, color=QColor(10
 
 class WeatherAPIClient:
     """
-    שלב 1: לקוח API לשירות המטאורולוגי הישראלי (IMS)
-    מאפשר טעינת רשימת תחנות ונתונים היסטוריים לפי טווח תאריכים
+    Step 1: API client for Israeli Meteorological Service (IMS)
+    Allows loading station list and historical data by date range
     """
     def __init__(self, api_token: str):
         self.api_token = api_token
@@ -268,28 +268,28 @@ class WeatherAPIClient:
         self.headers = {"Authorization": f"ApiToken {api_token}"}
 
     def get_stations(self):
-        """שלב 1.1: קבלת רשימת כל התחנות המטאורולוגיות"""
+        """Step 1.1: Get list of all meteorological stations"""
         try:
             response = requests.get(f"{self.base_url}/stations", headers=self.headers, timeout=15)
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
-            raise Exception(f"שגיאה בקריאת נתוני תחנות: {e}")
+            raise Exception(f"Error reading station data: {e}")
 
     def get_station_data(self, station_id: int):
-        """שלב 1.2: קבלת נתונים אחרונים מתחנה (לתצוגה מהירה)"""
+        """Step 1.2: Get latest data from station (for quick display)"""
         try:
             url = f"{self.base_url}/stations/{station_id}/data/latest"
             response = requests.get(url, headers=self.headers, timeout=15)
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
-            raise Exception(f"שגיאה בקריאת נתונים מטאורולוגיים: {e}")
+            raise Exception(f"Error reading meteorological data: {e}")
 
     def get_historical_data(self, station_id: int, start_date: str, end_date: str):
         """
-        שלב 1.3: קבלת נתונים היסטוריים מתחנה לפי טווח תאריכים
-        פורמט תאריכים: YYYY/MM/DD
+        Step 1.3: Get historical data from station by date range
+        Date format: YYYY/MM/DD
         """
         try:
             url = f"{self.base_url}/stations/{station_id}/data"
@@ -298,11 +298,11 @@ class WeatherAPIClient:
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
-            raise Exception(f"שגיאה בקריאת נתונים היסטוריים: {e}")
+            raise Exception(f"Error reading historical data: {e}")
 
 
 class APIWorker(QThread):
-    """שלב 2.1: Worker לטעינת רשימת תחנות או נתונים אחרונים (לא חוסם UI)"""
+    """Step 2.1: Worker for loading station list or latest data (non-blocking UI)"""
     data_ready = pyqtSignal(object)
     error_occurred = pyqtSignal(str)
 
@@ -323,15 +323,15 @@ class APIWorker(QThread):
 
 class HistoricalWeatherWorker(QThread):
     """
-    שלב 2.2: Worker לטעינת נתונים מטאורו��וגיים היסטוריים (ברקע)
-    טוען נתונים עבור כל התקופות הפיזיולוגיות הנדרשות למודל 1א:
-    - התמיינות: 1 בנובמבר (שנה קודמת) - 10 בפברואר
-    - פריחה: 11 בפברואר - 31 במרץ
-    - דילול: 1 באפריל - 15 במאי
+    Step 2.2: Worker for loading historical meteorological data (background)
+    Loads data for all physiological periods required for model 1a:
+    - Differentiation: November 1 (previous year) - February 10
+    - Flowering: February 11 - March 31
+    - Thinning: April 1 - May 15
     """
-    data_ready = pyqtSignal(object)  # dict עם weather_features
+    data_ready = pyqtSignal(object)  # dict with weather_features
     error_occurred = pyqtSignal(str)
-    progress_update = pyqtSignal(str)  # עדכון סטטוס למשתמש
+    progress_update = pyqtSignal(str)  # Status update to user
 
     def __init__(self, api_client, station_id: int, current_year: int):
         super().__init__()
@@ -342,12 +342,12 @@ class HistoricalWeatherWorker(QThread):
 
     def run(self):
         """
-        שלב 2.3: תהליך טעינה ועיבוד נתונים מטאורולוגיים
+        Step 2.3: Meteorological data loading and processing
         """
         try:
             prev_year = self.current_year - 1
 
-            # שלב 2.3.1: הגדרת טווח התאריכים הכולל
+            # Step 2.3.1: Define total date range
             start_date = f"{prev_year}/11/01"
             end_date = f"{self.current_year}/05/15"
 
@@ -355,25 +355,25 @@ class HistoricalWeatherWorker(QThread):
                 f"Loading meteorological data ({start_date.replace('/', '-')} to {end_date.replace('/', '-')})..."
             )
 
-            # שלב 2.3.2: קריאה ל-API לקבלת כל הנתונים ההיסטוריים
+            # Step 2.3.2: Call API to get all historical data
             raw_response = self.api_client.get_historical_data(
                 self.station_id, start_date, end_date
             )
 
-            # שלב 2.3.3: חילוץ הנתונים מתוך התשובה
+            # Step 2.3.3: Extract data from response
             if isinstance(raw_response, dict) and 'data' in raw_response:
                 raw_data_list = raw_response['data']
             elif isinstance(raw_response, list):
                 raw_data_list = raw_response
             else:
-                raise Exception("פורמט נתונים לא צפוי מה-API")
+                raise Exception("Unexpected data format from API")
 
             if not raw_data_list:
-                raise Exception("לא התקבלו נתונים מהתחנה לתקופה המבוקשת")
+                raise Exception("No data received from station for requested period")
 
             self.progress_update.emit("Processing weather features...")
 
-            # שלב 2.3.4: עיבוד הנתונים וחישוב הפיצ'רים למודל
+            # Step 2.3.4: Process data and compute model features
             weather_features = self.data_processor.process_weather_data(
                 raw_data_list, self.current_year
             )
@@ -386,9 +386,8 @@ class HistoricalWeatherWorker(QThread):
 
 class YieldDistributionChart(FigureCanvas):
     """
-    שלב 3: גרף התפלגות התחזית (Bell Curve)
-    מציג את החיזוי של המודל עם רווחי ביטחון
-    טקסט באנגלית למניעת בעיות עם RTL
+    Step 3: Yield Prediction Distribution Chart (Bell Curve)
+    Displays model prediction with confidence intervals
     """
     def __init__(self):
         self.fig = Figure(figsize=(8, 4.5), facecolor=COLORS['card'])
@@ -401,28 +400,28 @@ class YieldDistributionChart(FigureCanvas):
 
     def plot(self, mean, std_dev):
         """
-        שלב 3.1: ציור גרף הפעמון עם תחזית היבול
-        mean: ממוצע התחזית (ק"ג לעץ)
-        std_dev: סטיית תקן של התחזית
+        Step 3.1: Draw bell curve with yield prediction
+        mean: prediction mean (kg per tree)
+        std_dev: prediction standard deviation
         """
         self.ax.clear()
 
-        # שלב 3.2: יצירת עקומת ההתפלגות הנורמלית
+        # Step 3.2: Create normal distribution curve
         x = np.linspace(mean - 4 * std_dev, mean + 4 * std_dev, 400)
         y = norm.pdf(x, mean, std_dev)
 
-        # שלב 3.3: ציור העקומה ורווחי הביטחון
+        # Step 3.3: Draw curve and confidence intervals
         self.ax.plot(x, y, color=COLORS['primary'], linewidth=2.5, label='Yield Distribution')
         self.ax.fill_between(x, y, where=(x >= mean - std_dev) & (x <= mean + std_dev),
                              color=COLORS['primary_light'], alpha=0.6, label='68% Confidence')
         self.ax.fill_between(x, y, where=(x >= mean - 2 * std_dev) & (x <= mean + 2 * std_dev),
                              color=COLORS['primary_light'], alpha=0.3, label='95% Confidence')
 
-        # שלב 3.4: קו אנכי לציון הממוצע
+        # Step 3.4: Vertical line to mark the mean
         self.ax.axvline(mean, color=COLORS['accent'], linestyle='--', linewidth=2,
                         label=f'Predicted Yield: {mean:.1f} kg/tree')
 
-        # שלב 3.5: הגדרות תצוגה (באנגלית)
+        # Step 3.5: Display settings
         self.ax.set_xlabel('Yield Prediction (kg/tree)', fontsize=12, color=COLORS['text_secondary'])
         self.ax.set_ylabel('Probability Density', fontsize=12, color=COLORS['text_secondary'])
         self.ax.set_title(f'XGBoost Model 1A - Yield Prediction', fontsize=14,
@@ -439,7 +438,7 @@ class YieldDistributionChart(FigureCanvas):
 
 
 # =====================================================================================
-# 3. דפי המערכת (Widgets)
+# 3. System Pages (Widgets)
 # =====================================================================================
 class HomePage(QWidget):
     def __init__(self, parent=None):
@@ -455,10 +454,10 @@ class HomePage(QWidget):
             logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             layout.addWidget(logo_label)
             layout.addSpacing(5)
-        title = QLabel("🏠 ברוכים הבאים למערכת תומכת החלטה")
+        title = QLabel("🏠 Welcome to the Decision Support System")
         title.setObjectName("PageTitle")
         apply_shadow(title, blur_radius=5, x_offset=1, y_offset=2, color=QColor(0, 0, 0, 20))
-        subtitle = QLabel("כלי בינה מלאכותית מתקדם לקבלת החלטות מושכלות בגיזום ודילול תמרים.")
+        subtitle = QLabel("An advanced AI tool for informed decision-making in date palm pruning and thinning.")
         subtitle.setObjectName("PageSubtitle")
         layout.addWidget(title)
         layout.addWidget(subtitle)
@@ -477,16 +476,16 @@ class HomePage(QWidget):
         apply_shadow(card)
         card_layout = QVBoxLayout(card)
         card_layout.setSpacing(20)
-        card_title = QLabel("איך משתמשים במערכת?")
+        card_title = QLabel("How to use the system?")
         card_title.setObjectName("CardTitle")
         card_layout.addWidget(card_title)
         steps_text = [
-            ("<b>שלב 1: הזנת נתונים</b>",
-             "עברו לדף 'הזנת נתונים'. שם תוכלו לבחור את שיטת הזנת הגיל, למלא פרוטוקול דילול (כללי או לפי דור) ולבחור תחנה מטאורולוגית."),
-            ("<b>שלב 2: ניתוח חכם</b>",
-             "לאחר מילוי כל השדות, לחצו על כפתור 'נתח וצור תחזית'. המערכת תעבד את הנתונים שהזנתם יחד עם מודלים חקלאיים מתקדמים."),
-            ("<b>שלב 3: קבלת תוצאות</b>",
-             "המערכת תציג לכם אוטומטית את דף התוצאות, הכולל גרף התפלגות של תחזית היבול והמלצות מותאמות אישית להמשך טיפול.")
+            ("<b>Step 1: Data Entry</b>",
+             "Go to the 'Data Entry' page. There you can select the age input method, fill in the thinning protocol (general or by generation), and select a meteorological station."),
+            ("<b>Step 2: Smart Analysis</b>",
+             "After filling all fields, click the 'Analyze & Generate Prediction' button. The system will process your data along with advanced agricultural models."),
+            ("<b>Step 3: Get Results</b>",
+             "The system will automatically display the results page, including a yield prediction distribution chart and personalized recommendations for further treatment.")
         ]
         for title_text, desc in steps_text:
             step_label = QLabel(f"📝 {title_text}")
@@ -502,8 +501,8 @@ class HomePage(QWidget):
 
 class DataEntryPage(QWidget):
     """
-    שלב 4: דף הזנת נתונים
-    כולל: בחירת תחנה, פרמטרים מהמשתמש, וטעינת נתונים מטאורולוגיים
+    Step 4: Data Entry Page
+    Includes: station selection, user parameters, and loading meteorological data
     """
     analysis_requested = pyqtSignal(dict)
 
@@ -511,17 +510,17 @@ class DataEntryPage(QWidget):
         super().__init__(parent)
         self.api_client = api_client
         self.stations_data = []
-        self.weather_features = None  # שלב 4.1: שמירת הפיצ'רים המטאורולוגיים
-        self.is_loading = False  # שלב 4.2: מצב טעינה
+        self.weather_features = None  # Step 4.1: Store meteorological features
+        self.is_loading = False  # Step 4.2: Loading state
 
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(40, 30, 40, 30)
         main_layout.setSpacing(20)
 
-        title = QLabel("📝 הזנת נתונים ופרוטוקול דילול")
+        title = QLabel("📝 Data Entry and Thinning Protocol")
         title.setObjectName("PageTitle")
         apply_shadow(title, blur_radius=5, x_offset=1, y_offset=2, color=QColor(0, 0, 0, 20))
-        subtitle = QLabel("מלאו את הנתונים הבאים כדי לקבל תחזית יבול (מודל 1א - צומת החלטה אפריל-מאי).")
+        subtitle = QLabel("Fill in the following data to receive a yield prediction (Model 1A - April-May decision node).")
         subtitle.setObjectName("PageSubtitle")
         main_layout.addWidget(title)
         main_layout.addWidget(subtitle)
@@ -529,36 +528,36 @@ class DataEntryPage(QWidget):
         content_layout = QHBoxLayout()
         content_layout.setSpacing(25)
 
-        # --- כרטיס נתוני אקלים (צד שמאל) ---
+        # --- Climate Data Card (left side) ---
         weather_card = QFrame()
         weather_card.setObjectName("Card")
         apply_shadow(weather_card)
         weather_layout = QVBoxLayout(weather_card)
-        weather_title = QLabel("נתוני אקלים - תחנה מטאורולוגית")
+        weather_title = QLabel("Climate Data - Meteorological Station")
         weather_title.setObjectName("CardTitle")
         weather_layout.addWidget(weather_title)
 
         self.station_combo = QComboBox()
-        self.station_combo.setPlaceholderText("טוען תחנות...")
+        self.station_combo.setPlaceholderText("Loading stations...")
         self.station_combo.setEnabled(False)
         weather_layout.addWidget(self.station_combo)
 
-        self.load_data_btn = QPushButton("📡 טען נתוני תחנה")
+        self.load_data_btn = QPushButton("📡 Load Station Data")
         self.load_data_btn.setEnabled(False)
         self.load_data_btn.clicked.connect(self.load_weather_data)
         weather_layout.addWidget(self.load_data_btn)
 
-        # שלב 4.3: אזור סטטוס טעינה עם Spinner
+        # Step 4.3: Loading status area with Spinner
         self.status_container = QWidget()
         status_layout = QHBoxLayout(self.status_container)
         status_layout.setContentsMargins(0, 10, 0, 10)
 
-        # Spinner (אנימציית טעינה)
+        # Spinner (loading animation)
         self.spinner_label = QLabel("⏳")
         self.spinner_label.setStyleSheet("font-size: 20px;")
         self.spinner_label.setVisible(False)
 
-        # טקסט סטטוס
+        # Status text
         self.status_label = QLabel("")
         self.status_label.setStyleSheet(f"color: {COLORS['primary']}; font-size: 13px; font-weight: 600;")
         self.status_label.setWordWrap(True)
@@ -567,24 +566,24 @@ class DataEntryPage(QWidget):
         status_layout.addWidget(self.status_label, 1)
         weather_layout.addWidget(self.status_container)
 
-        # טיימר לאנימציית הספינר
+        # Timer for spinner animation
         self.spinner_timer = QTimer(self)
         self.spinner_timer.timeout.connect(self._animate_spinner)
         self.spinner_frames = ["⏳", "⌛", "🔄", "⏳"]
         self.spinner_index = 0
 
         self.data_display = QTextEdit()
-        self.data_display.setPlainText("בחר תחנה ולחץ על 'טען נתוני תחנה' כדי לטעון נתונים מטאורולוגיים היסטוריים...")
+        self.data_display.setPlainText("Select a station and click 'Load Station Data' to load historical meteorological data...")
         self.data_display.setReadOnly(True)
         weather_layout.addWidget(self.data_display)
 
-        # --- כרטיס פרוטוקול (צד ימין) ---
+        # --- Protocol Card (right side) ---
         protocol_card = QFrame()
         protocol_card.setObjectName("Card")
         apply_shadow(protocol_card)
         protocol_layout = QVBoxLayout(protocol_card)
         protocol_layout.setSpacing(15)
-        protocol_title = QLabel("פרטי העץ ופרוטוקול הדילול")
+        protocol_title = QLabel("Tree Details and Thinning Protocol")
         protocol_title.setObjectName("CardTitle")
         protocol_layout.addWidget(protocol_title)
         self.create_age_input_group(protocol_layout)
@@ -592,10 +591,10 @@ class DataEntryPage(QWidget):
         tab_widget = self.create_thinning_tabs()
         protocol_layout.addWidget(tab_widget)
 
-        # --- מיקום חדש ומשופר לכפתור הניתוח ---
-        self.analyze_btn = QPushButton("⚠️ טען נתונים תחילה")
+        # --- New and improved placement for analyze button ---
+        self.analyze_btn = QPushButton("⚠️ Load Data First")
         self.analyze_btn.setObjectName("AnalyzeButton")
-        self.analyze_btn.setEnabled(False)  # מושבת עד שנטענים נתונים מטאורולוגיים
+        self.analyze_btn.setEnabled(False)  # Disabled until meteorological data is loaded
         self.analyze_btn.clicked.connect(self.request_analysis)
 
         button_inside_card_layout = QHBoxLayout()
@@ -606,7 +605,7 @@ class DataEntryPage(QWidget):
         protocol_layout.addLayout(button_inside_card_layout)
         protocol_layout.addStretch()
 
-        # הוספת הכרטיסים לפריסה הראשית
+        # Adding cards to main layout
         content_layout.addWidget(weather_card, 1)
         content_layout.addWidget(protocol_card, 2)
         main_layout.addLayout(content_layout)
@@ -614,49 +613,49 @@ class DataEntryPage(QWidget):
         self.load_stations()
 
     def _animate_spinner(self):
-        """שלב 4.4: אנימציית הספינר"""
+        """Step 4.4: Spinner animation"""
         self.spinner_index = (self.spinner_index + 1) % len(self.spinner_frames)
         self.spinner_label.setText(self.spinner_frames[self.spinner_index])
 
     def _set_loading_state(self, is_loading: bool, status_text: str = ""):
-        """שלב 4.5: הקפאת/שחרור הממשק בזמן טעינה"""
+        """Step 4.5: Freeze/release UI during loading"""
         self.is_loading = is_loading
 
-        # עדכון מצב הכפתורים
+        # Update button states
         self.load_data_btn.setEnabled(not is_loading and len(self.stations_data) > 0)
         self.station_combo.setEnabled(not is_loading and len(self.stations_data) > 0)
 
-        # עדכון כפתור הניתוח - מושבת עד שנטענים נתונים ��טאורולוגיים
+        # Update analyze button - disabled until meteorological data is loaded
         can_analyze = not is_loading and self.weather_features is not None
         self.analyze_btn.setEnabled(can_analyze)
 
-        # שינוי טקסט הכפתור בהתאם למצב
+        # Change button text according to state
         if is_loading:
-            self.analyze_btn.setText("⏳ בתהליך - המתן לסיום...")
-            self.load_data_btn.setText("⏳ טוען...")
+            self.analyze_btn.setText("⏳ Processing - Please Wait...")
+            self.load_data_btn.setText("⏳ Loading...")
         else:
-            self.analyze_btn.setText("🔬 נתח וצור תחזית")
-            self.load_data_btn.setText("📡 טען נתוני תחנה")
+            self.analyze_btn.setText("🔬 Analyze & Generate Prediction")
+            self.load_data_btn.setText("📡 Load Station Data")
 
-            # אם אין נתונים מטאורולוגיים - הודעה מתאימה
+            # If no meteorological data - appropriate message
             if self.weather_features is None:
-                self.analyze_btn.setText("⚠️ טען נתונים תחילה")
+                self.analyze_btn.setText("⚠️ Load Data First")
 
-        # עדכון הספינר
+        # Update spinner
         self.spinner_label.setVisible(is_loading)
         if is_loading:
-            self.spinner_timer.start(300)  # אנימציה כל 300ms
+            self.spinner_timer.start(300)  # Animation every 300ms
         else:
             self.spinner_timer.stop()
 
-        # עדכון טקסט הסטטוס
+        # Update status text
         self.status_label.setText(status_text)
 
     def create_age_input_group(self, parent_layout):
-        age_group = QGroupBox("גיל העץ")
+        age_group = QGroupBox("Tree Age")
         age_group_layout = QVBoxLayout(age_group)
-        self.by_age_radio = QRadioButton("הזן גיל")
-        self.by_year_radio = QRadioButton("הזן שנת שתילה")
+        self.by_age_radio = QRadioButton("Enter Age")
+        self.by_year_radio = QRadioButton("Enter Planting Year")
         radio_layout = QHBoxLayout()
         radio_layout.addWidget(self.by_age_radio)
         radio_layout.addWidget(self.by_year_radio)
@@ -664,11 +663,11 @@ class DataEntryPage(QWidget):
         self.age_input_stack = QStackedWidget()
         self.age_input = QLineEdit()
         self.age_input.setValidator(QIntValidator(1, 100))
-        self.age_input.setPlaceholderText("גיל בשנים (לדוגמה: 8)")
+        self.age_input.setPlaceholderText("Age in years (e.g., 8)")
         self.age_input_stack.addWidget(self.age_input)
         self.year_input = QLineEdit()
         self.year_input.setValidator(QIntValidator(1950, datetime.now().year))
-        self.year_input.setPlaceholderText(f"שנת שתילה (לדוגמה: {datetime.now().year - 8})")
+        self.year_input.setPlaceholderText(f"Planting year (e.g., {datetime.now().year - 8})")
         self.age_input_stack.addWidget(self.year_input)
         age_group_layout.addWidget(self.age_input_stack)
         self.by_age_radio.setChecked(True)
@@ -678,30 +677,30 @@ class DataEntryPage(QWidget):
 
     def create_thinning_tabs(self):
         tab_widget = QTabWidget()
-        self.thinning_tabs = tab_widget  # שמירת רפרנס
+        self.thinning_tabs = tab_widget  # Store reference
 
-        # טאב פרוטוקול כללי
+        # General protocol tab
         general_tab = QWidget()
         general_layout = QFormLayout(general_tab)
         general_layout.setSpacing(16)
-        general_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
-        # שדות ללא ברירות מחדל, רק placeholder
+        general_layout.setLabelAlignment(Qt.AlignmentFlag.AlignLeft)
+        # Fields without defaults, only placeholder
         self.branches_count_general = QLineEdit("")
         self.branches_count_general.setValidator(QIntValidator(1, 100))
-        self.branches_count_general.setPlaceholderText("לדוגמה: 25")
+        self.branches_count_general.setPlaceholderText("e.g., 25")
         self.fronds_count_general = QLineEdit("")
         self.fronds_count_general.setValidator(QIntValidator(10, 300))
-        self.fronds_count_general.setPlaceholderText("לדוגמה: 120")
-        # שדה נוסף: מספר אשכולות בפרוטוקול הכללי
+        self.fronds_count_general.setPlaceholderText("e.g., 120")
+        # Additional field: number of clusters in general protocol
         self.clusters_count_general = QLineEdit("")
         self.clusters_count_general.setValidator(QIntValidator(1, 500))
-        self.clusters_count_general.setPlaceholderText("לדוגמה: 8")
-        general_layout.addRow("מס' ממוצע סנסנים לאשכול:", self.branches_count_general)
-        general_layout.addRow("מס' ממוצע חנטים לסנסן:", self.fronds_count_general)
-        general_layout.addRow("מס' אשכולות כולל:", self.clusters_count_general)
-        tab_widget.addTab(general_tab, "פרוטוקול כללי")
+        self.clusters_count_general.setPlaceholderText("e.g., 8")
+        general_layout.addRow("Avg. strands per bunch:", self.branches_count_general)
+        general_layout.addRow("Avg. fruitlets per strand:", self.fronds_count_general)
+        general_layout.addRow("Total bunches:", self.clusters_count_general)
+        tab_widget.addTab(general_tab, "General Protocol")
 
-        # טאב פרוטוקול לפי דור
+        # By generation protocol tab
         generation_tab = QWidget()
         generation_scroll = QScrollArea()
         generation_scroll.setWidgetResizable(True)
@@ -716,55 +715,55 @@ class DataEntryPage(QWidget):
         generation_tab_layout.addWidget(generation_scroll)
 
         generation_layout.setSpacing(12)
-        generation_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
+        generation_layout.setLabelAlignment(Qt.AlignmentFlag.AlignLeft)
 
-        # מספר אשכולות בפרוטוקול לפי דור
+        # Number of bunches in by-generation protocol
         self.clusters_count_generation = QLineEdit("")
         self.clusters_count_generation.setValidator(QIntValidator(1, 500))
-        self.clusters_count_generation.setPlaceholderText("לדוגמה: 8")
-        generation_layout.addRow("מספר אשכולות:", self.clusters_count_generation)
+        self.clusters_count_generation.setPlaceholderText("e.g., 8")
+        generation_layout.addRow("Number of bunches:", self.clusters_count_generation)
 
-        # שדות ללא ברירת מחדל, רק placeholders
+        # Fields without defaults, only placeholders
         self.branches_upper = QLineEdit("")
-        self.branches_upper.setPlaceholderText("לדוגמה: 22")
+        self.branches_upper.setPlaceholderText("e.g., 22")
         self.fronds_upper = QLineEdit("")
-        self.fronds_upper.setPlaceholderText("לדוגמה: 110")
+        self.fronds_upper.setPlaceholderText("e.g., 110")
         self.branches_middle = QLineEdit("")
-        self.branches_middle.setPlaceholderText("לדוגמה: 25")
+        self.branches_middle.setPlaceholderText("e.g., 25")
         self.fronds_middle = QLineEdit("")
-        self.fronds_middle.setPlaceholderText("לדוגמה: 120")
+        self.fronds_middle.setPlaceholderText("e.g., 120")
         self.branches_lower = QLineEdit("")
-        self.branches_lower.setPlaceholderText("לדוגמה: 28")
+        self.branches_lower.setPlaceholderText("e.g., 28")
         self.fronds_lower = QLineEdit("")
-        self.fronds_lower.setPlaceholderText("לדוגמה: 130")
+        self.fronds_lower.setPlaceholderText("e.g., 130")
         for w in [self.branches_upper, self.branches_middle, self.branches_lower]: w.setValidator(QIntValidator(1, 100))
         for w in [self.fronds_upper, self.fronds_middle, self.fronds_lower]: w.setValidator(QIntValidator(10, 300))
 
-        generation_layout.addRow(QLabel("<b>דור עליון:</b>"))
-        generation_layout.addRow("  סנסנים לאשכול:", self.branches_upper)
-        generation_layout.addRow("  חנטים לסנסן:", self.fronds_upper)
-        generation_layout.addRow(QLabel("<b>דור אמצעי:</b>"))
-        generation_layout.addRow("  סנסנים לאשכול:", self.branches_middle)
-        generation_layout.addRow("  חנטים לסנסן:", self.fronds_middle)
-        generation_layout.addRow(QLabel("<b>דור תחתון:</b>"))
-        generation_layout.addRow("  סנסנים לאשכול:", self.branches_lower)
-        generation_layout.addRow("  חנטים לסנסן:", self.fronds_lower)
+        generation_layout.addRow(QLabel("<b>Upper Generation:</b>"))
+        generation_layout.addRow("  Strands per bunch:", self.branches_upper)
+        generation_layout.addRow("  Fruitlets per strand:", self.fronds_upper)
+        generation_layout.addRow(QLabel("<b>Middle Generation:</b>"))
+        generation_layout.addRow("  Strands per bunch:", self.branches_middle)
+        generation_layout.addRow("  Fruitlets per strand:", self.fronds_middle)
+        generation_layout.addRow(QLabel("<b>Lower Generation:</b>"))
+        generation_layout.addRow("  Strands per bunch:", self.branches_lower)
+        generation_layout.addRow("  Fruitlets per strand:", self.fronds_lower)
 
-        tab_widget.addTab(generation_tab, "פרוטוקול לפי דור")
+        tab_widget.addTab(generation_tab, "By Generation Protocol")
         return tab_widget
 
     def _get_tree_age(self):
         if self.by_age_radio.isChecked():
             age_str = self.age_input.text()
-            if not age_str: raise ValueError("יש להזין גיל עץ.")
+            if not age_str: raise ValueError("Please enter tree age.")
             return int(age_str)
         else:
             year_str = self.year_input.text()
-            if not year_str: raise ValueError("יש להזין שנת שתילה.")
+            if not year_str: raise ValueError("Please enter planting year.")
             planting_year = int(year_str)
             current_year = datetime.now().year
             age = current_year - planting_year
-            if not (0 < age < 100): raise ValueError("הגיל המחושב אינו בטווח הגיוני (1-99).")
+            if not (0 < age < 100): raise ValueError("Calculated age is not in reasonable range (1-99).")
             return age
 
     def load_stations(self):
@@ -780,11 +779,11 @@ class DataEntryPage(QWidget):
 
             self.station_combo.clear()
             self.station_combo.addItems(station_options)
-            self.station_combo.setPlaceholderText("בחר תחנה מהרשימה")
+            self.station_combo.setPlaceholderText("Select a station from the list")
             self.station_combo.setEnabled(True)
             self.load_data_btn.setEnabled(True)
 
-            # ===== ברירת מחדל: Yotvata (stationId = 36) =====
+            # ===== Default: Yotvata (stationId = 36) =====
             default_station_id = 36
             for i, station in enumerate(self.stations_data):
                 if station.get('stationId') == default_station_id:
@@ -792,11 +791,11 @@ class DataEntryPage(QWidget):
                     break
 
     def on_api_error(self, error_msg):
-        self.data_display.setPlainText(f"❌ שגיאה: {error_msg}")
-        QMessageBox.warning(self, "שגיאת רשת", f"לא ניתן לטעון נתוני תחנות:\n{error_msg}")
+        self.data_display.setPlainText(f"❌ Error: {error_msg}")
+        QMessageBox.warning(self, "Network Error", f"Unable to load station data:\n{error_msg}")
 
     def load_weather_data(self):
-        """שלב 4.8: טעינת נתונים מטאורולוגיים היסטוריים"""
+        """Step 4.8: Load historical meteorological data"""
         current_index = self.station_combo.currentIndex()
         if current_index < 0:
             return
@@ -805,14 +804,14 @@ class DataEntryPage(QWidget):
         station_name = self.stations_data[current_index]['name']
         current_year = datetime.now().year
 
-        # הקפאת הממשק
-        self._set_loading_state(True, f"טוען נתונים היסטוריים עבור תחנת {station_name}...")
-        self.data_display.setPlainText(f"🔄 טוען נתונים מטאורולוגיים היסטוריים...\n\nתקופות נטענות:\n" +
-                                        f"• התמיינות: {current_year-1}-11-01 עד {current_year}-02-10\n" +
-                                        f"• פריחה: {current_year}-02-11 עד {current_year}-03-31\n" +
-                                        f"• דילול: {current_year}-04-01 עד {current_year}-05-15")
+        # Freeze UI
+        self._set_loading_state(True, f"Loading historical data for {station_name} station...")
+        self.data_display.setPlainText(f"🔄 Loading historical meteorological data...\n\nLoading periods:\n" +
+                                        f"• Differentiation: {current_year-1}-11-01 to {current_year}-02-10\n" +
+                                        f"• Flowering: {current_year}-02-11 to {current_year}-03-31\n" +
+                                        f"• Thinning: {current_year}-04-01 to {current_year}-05-15")
 
-        # יצירת Worker לטעינת נתונים היסטוריים
+        # Create Worker for loading historical data
         self.historical_worker = HistoricalWeatherWorker(
             self.api_client, station_id, current_year
         )
@@ -822,21 +821,21 @@ class DataEntryPage(QWidget):
         self.historical_worker.start()
 
     def on_progress_update(self, message: str):
-        """שלב 4.9: עדכון סטטוס התקדמות"""
+        """Step 4.9: Update progress status"""
         self.status_label.setText(message)
 
     def on_historical_data_loaded(self, weather_features: dict):
-        """שלב 4.10: טיפול בנתונים מטאורולוגיים שנטענו בהצלחה"""
+        """Step 4.10: Handle successfully loaded meteorological data"""
         self.weather_features = weather_features
 
-        # הצגת הפיצ'רים שחושבו
-        features_text = "✅ נתונים מטאורולוגיים נטענו בהצלחה!\n\n"
-        features_text += "═══ פיצ'רים מחושבים למודל 1א ═══\n\n"
+        # Display computed features
+        features_text = "✅ Meteorological data loaded successfully!\n\n"
+        features_text += "═══ Computed Features for Model 1A ═══\n\n"
 
         period_names = {
-            'Inf_differentiation': 'התמיינות (נוב-פבר)',
-            'Flowering': 'פריחה (פבר-מרץ)',
-            'Thinning': 'דילול (אפר-מאי)'
+            'Inf_differentiation': 'Differentiation (Nov-Feb)',
+            'Flowering': 'Flowering (Feb-Mar)',
+            'Thinning': 'Thinning (Apr-May)'
         }
 
         for period_key, period_name in period_names.items():
@@ -844,50 +843,50 @@ class DataEntryPage(QWidget):
             t_val = weather_features.get(f'T_{period_key}', 0)
             h_val = weather_features.get(f'H_{period_key}', 0)
             e_val = weather_features.get(f'E_{period_key}', 0)
-            features_text += f"   • שעות חום (T): {t_val:.1f}\n"
-            features_text += f"   • לחות ממוצעת (H): {h_val:.1f}%\n"
-            features_text += f"   • אידוי כולל (E): {e_val:.2f} מ\"מ\n\n"
+            features_text += f"   • Heat Hours (T): {t_val:.1f}\n"
+            features_text += f"   • Average Humidity (H): {h_val:.1f}%\n"
+            features_text += f"   • Total Evaporation (E): {e_val:.2f} mm\n\n"
 
         self.data_display.setPlainText(features_text)
 
-        # שחרור הממשק
-        self._set_loading_state(False, "✅ נתונים נטענו בהצלחה - ניתן להריץ ניתוח")
+        # Release UI
+        self._set_loading_state(False, "✅ Data loaded successfully - Ready to run analysis")
 
     def on_historical_data_error(self, error_msg: str):
-        """שלב 4.11: טיפול בשגיאת טעינת נתונים היסטוריים"""
+        """Step 4.11: Handle historical data loading error"""
         self.weather_features = None
-        self.data_display.setPlainText(f"❌ שגיאה בטעינת נתונים היסטוריים:\n\n{error_msg}")
-        self._set_loading_state(False, "❌ שגיאה בטעינת נתונים")
-        QMessageBox.warning(self, "שגיאת נתונים",
-                           f"לא ניתן היה לטעון נתונים מטאורולוגיים היסטוריים:\n{error_msg}")
+        self.data_display.setPlainText(f"❌ Error loading historical data:\n\n{error_msg}")
+        self._set_loading_state(False, "❌ Error loading data")
+        QMessageBox.warning(self, "Data Error",
+                           f"Unable to load historical meteorological data:\n{error_msg}")
 
     def request_analysis(self):
-        """שלב 4.12: בקשת ניתוח והעברת נתונים ל-MainWindow"""
+        """Step 4.12: Request analysis and pass data to MainWindow"""
         try:
-            # בדיקה שנתונים מטאורולוגיים נטענו
+            # Check that meteorological data was loaded
             if self.weather_features is None:
-                QMessageBox.warning(self, "חסרים נתונים",
-                                   "יש לטעון נתונים מטאורולוגיים לפני הרצת הניתוח.\n\n" +
-                                   "בחר תחנה ולחץ על 'טען נתוני תחנה'.")
+                QMessageBox.warning(self, "Missing Data",
+                                   "Please load meteorological data before running analysis.\n\n" +
+                                   "Select a station and click 'Load Station Data'.")
                 return
 
             data = {'tree_age': self._get_tree_age()}
-            data['weather_features'] = self.weather_features  # הוספת הפיצ'רים המטאורולוגיים
+            data['weather_features'] = self.weather_features  # Add meteorological features
 
             def _parse_positive_int(widget: QLineEdit, field_name: str) -> int:
                 text = widget.text().strip()
                 if not text:
-                    raise ValueError(f"יש להזין ערך בשדה: {field_name}")
+                    raise ValueError(f"Please enter a value in: {field_name}")
                 value = int(text)
                 if value <= 0:
-                    raise ValueError(f"השדה '{field_name}' חייב להיות גדול מ-0")
+                    raise ValueError(f"Field '{field_name}' must be greater than 0")
                 return value
 
             if self.thinning_tabs.currentIndex() == 0:
                 data['protocol_type'] = 'general'
-                branches_val = _parse_positive_int(self.branches_count_general, "מספר סנסנים לאשכול")
-                fronds_val = _parse_positive_int(self.fronds_count_general, "מספר חנטים לסנסן")
-                clusters_val = _parse_positive_int(self.clusters_count_general, "מספר אשכולות")
+                branches_val = _parse_positive_int(self.branches_count_general, "Strands per bunch")
+                fronds_val = _parse_positive_int(self.fronds_count_general, "Fruitlets per strand")
+                clusters_val = _parse_positive_int(self.clusters_count_general, "Number of bunches")
                 data['thinning'] = {
                     'branches': branches_val,
                     'fronds': fronds_val,
@@ -895,13 +894,13 @@ class DataEntryPage(QWidget):
                 }
             else:
                 data['protocol_type'] = 'by_generation'
-                clusters_val = _parse_positive_int(self.clusters_count_generation, "מספר אשכולות")
-                upper_br = _parse_positive_int(self.branches_upper, "סנסנים לאשכול (דור עליון)")
-                upper_fr = _parse_positive_int(self.fronds_upper, "חנטים לסנסן (דור עליון)")
-                middle_br = _parse_positive_int(self.branches_middle, "סנסנים לאשכול (דור אמצעי)")
-                middle_fr = _parse_positive_int(self.fronds_middle, "חנטים לסנסן (דור אמצעי)")
-                lower_br = _parse_positive_int(self.branches_lower, "סנסנים לאשכול (דור תחתון)")
-                lower_fr = _parse_positive_int(self.fronds_lower, "חנטים לסנסן (דור תחתון)")
+                clusters_val = _parse_positive_int(self.clusters_count_generation, "Number of bunches")
+                upper_br = _parse_positive_int(self.branches_upper, "Strands per bunch (upper)")
+                upper_fr = _parse_positive_int(self.fronds_upper, "Fruitlets per strand (upper)")
+                middle_br = _parse_positive_int(self.branches_middle, "Strands per bunch (middle)")
+                middle_fr = _parse_positive_int(self.fronds_middle, "Fruitlets per strand (middle)")
+                lower_br = _parse_positive_int(self.branches_lower, "Strands per bunch (lower)")
+                lower_fr = _parse_positive_int(self.fronds_lower, "Fruitlets per strand (lower)")
                 data['thinning'] = {
                     'clusters': clusters_val,
                     'upper': {'branches': upper_br, 'fronds': upper_fr},
@@ -910,13 +909,13 @@ class DataEntryPage(QWidget):
                 }
             self.analysis_requested.emit(data)
         except (ValueError, TypeError) as e:
-            QMessageBox.warning(self, "שגיאת קלט", f"אחד או יותר מהשדות אינו תקין.\n{e}")
+            QMessageBox.warning(self, "Input Error", f"One or more fields are invalid.\n{e}")
 
 
 class ResultsPage(QWidget):
     """
-    שלב 5: דף תוצאות - מציג את תחזית היבול בגרף פעמון
-    ללא חלק ההמלצות (כי המודל לא נותן ערך לזה)
+    Step 5: Results Page - Displays yield prediction in a bell curve chart
+    Without recommendations section (as the model doesn't provide a value for that)
     """
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -924,32 +923,32 @@ class ResultsPage(QWidget):
         self.main_layout.setContentsMargins(40, 30, 40, 30)
         self.main_layout.setSpacing(20)
 
-        # שלב 5.1: מסך placeholder לפני הרצת ניתוח
+        # Step 5.1: Placeholder screen before running analysis
         self.placeholder_widget = QWidget()
         placeholder_layout = QVBoxLayout(self.placeholder_widget)
         placeholder_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        placeholder_label = QLabel("📊\nהזן נתונים בדף הקודם ולחץ 'נתח' כדי לראות כאן את התוצאות.")
+        placeholder_label = QLabel("📊\nEnter data on the previous page and click 'Analyze' to see results here.")
         placeholder_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         placeholder_label.setStyleSheet("font-size: 18px; color: #6B7280;")
         placeholder_layout.addWidget(placeholder_label)
         self.main_layout.addWidget(self.placeholder_widget)
 
-        # שלב 5.2: מסך התוצאות עצמו
+        # Step 5.2: Results screen itself
         self.results_widget = QWidget()
         self.results_layout = QVBoxLayout(self.results_widget)
         self.results_layout.setContentsMargins(0, 0, 0, 0)
         self.main_layout.addWidget(self.results_widget)
         self.results_widget.setVisible(False)
 
-        title = QLabel("📊 תוצאות ניתוח ותחזית יבול - מודל 1א")
+        title = QLabel("📊 Analysis Results and Yield Prediction - Model 1A")
         title.setObjectName("PageTitle")
         apply_shadow(title, blur_radius=5, x_offset=1, y_offset=2, color=QColor(0, 0, 0, 20))
-        subtitle = QLabel("תחזית יבול (ק\"ג לעץ) בצומת ההחלטה (אפריל-מאי) מבוססת XGBoost")
+        subtitle = QLabel("Yield prediction (kg/tree) at decision node (April-May) based on XGBoost")
         subtitle.setObjectName("PageSubtitle")
         self.results_layout.addWidget(title)
         self.results_layout.addWidget(subtitle)
 
-        # שלב 5.3: כרטיס הגרף
+        # Step 5.3: Chart card
         chart_card = QFrame()
         chart_card.setObjectName("Card")
         apply_shadow(chart_card)
@@ -960,7 +959,7 @@ class ResultsPage(QWidget):
         chart_card_layout.addWidget(chart_title)
         chart_card_layout.addWidget(self.yield_dist_chart)
 
-        # שלב 5.4: תיבת סיכום מספרי
+        # Step 5.4: Numeric summary box
         summary_layout = QHBoxLayout()
         summary_layout.setSpacing(20)
 
@@ -992,17 +991,17 @@ class ResultsPage(QWidget):
         self.results_layout.addWidget(chart_card)
 
     def update_results(self, results):
-        """שלב 5.5: עדכון התוצאות בממשק"""
+        """Step 5.5: Update results in the interface"""
         self.placeholder_widget.setVisible(False)
         self.results_widget.setVisible(True)
 
         mean_yield = results['yield_mean']
         std_yield = results['yield_std']
 
-        # ציור הגרף
+        # Draw chart
         self.yield_dist_chart.plot(mean=mean_yield, std_dev=std_yield)
 
-        # עדכון תיבות הסיכום
+        # Update summary boxes
         self.prediction_label.setText(f"🌴 Predicted Yield: {mean_yield:.1f} kg/tree")
         self.confidence_label.setText(
             f"68% Confidence: {mean_yield - std_yield:.1f} - {mean_yield + std_yield:.1f} kg\n"
@@ -1011,11 +1010,11 @@ class ResultsPage(QWidget):
 
 
 # =====================================================================================
-# 4. החלון הראשי של האפליקציה
+# 4. Main Application Window
 # =====================================================================================
 class MainWindow(QMainWindow):
     """
-    שלב 6: החלון הראשי - מנהל את כל הדפים ואת מודל ה-XGBoost
+    Step 6: Main Window - Manages all pages and the XGBoost model
     """
     def __init__(self):
         super().__init__()
@@ -1023,11 +1022,11 @@ class MainWindow(QMainWindow):
         self.api_client = WeatherAPIClient(self.API_TOKEN)
         self.data_processor = DataProcessor()
 
-        # שלב 6.1: טעינת מודל XGBoost
+        # Step 6.1: Load XGBoost model
         self.xgb_model = None
         self._load_xgboost_model()
 
-        self.setWindowTitle("דילול חנטי תמרים - מודל 1א")
+        self.setWindowTitle("Date Palm Fruitlet Thinning - Model 1A")
         self.setWindowIcon(QIcon('volcani_logo.png'))
 
         self.setMinimumSize(960, 720)
@@ -1037,14 +1036,14 @@ class MainWindow(QMainWindow):
         self.center_window()
 
     def _load_xgboost_model(self):
-        """שלב 6.2: טעינת מודל XGBoost מקובץ JSON"""
+        """Step 6.2: Load XGBoost model from JSON file"""
         try:
             model_path = 'xgboost_yield_model_1a.json'
             self.xgb_model = xgb.Booster()
             self.xgb_model.load_model(model_path)
-            print(f"✅ מודל XGBoost נטען בהצלחה: {model_path}")
+            print(f"✅ XGBoost model loaded successfully: {model_path}")
         except Exception as e:
-            print(f"❌ שגיאה בטעינת מודל XGBoost: {e}")
+            print(f"❌ Error loading XGBoost model: {e}")
             self.xgb_model = None
 
     def center_window(self):
@@ -1058,9 +1057,9 @@ class MainWindow(QMainWindow):
         self.nav_bar = QListWidget()
         self.nav_bar.setMinimumWidth(200)
         self.nav_bar.setMaximumWidth(320)
-        self.nav_bar.addItem(QListWidgetItem("🏠   עמוד הבית"))
-        self.nav_bar.addItem(QListWidgetItem("📝   הזנת נתונים"))
-        self.nav_bar.addItem(QListWidgetItem("📊   תוצאות וניתוח"))
+        self.nav_bar.addItem(QListWidgetItem("🏠   Home"))
+        self.nav_bar.addItem(QListWidgetItem("📝   Data Entry"))
+        self.nav_bar.addItem(QListWidgetItem("📊   Results & Analysis"))
         self.nav_bar.setCurrentRow(0)
 
         self.stacked_widget = QStackedWidget()
@@ -1080,30 +1079,30 @@ class MainWindow(QMainWindow):
         self.data_entry_page.analysis_requested.connect(self.run_analysis)
 
     def run_analysis(self, data):
-        """שלב 6.3: הרצת ניתוח עם מודל XGBoost"""
+        """Step 6.3: Run analysis with XGBoost model"""
         results = self.calculate_results(data)
         self.results_page.update_results(results)
         self.nav_bar.setCurrentRow(2)
-        self.statusBar().showMessage("✅ ניתוח הושלם בהצלחה. מציג תוצאות.", 5000)
+        self.statusBar().showMessage("✅ Analysis completed successfully. Displaying results.", 5000)
 
     def calculate_results(self, data):
         """
-        שלב 6.4: חישוב תחזית יבול באמצעות מודל XGBoost
+        Step 6.4: Calculate yield prediction using XGBoost model
 
-        הפיצ'רים הנדרשים למודל 1א (לפי השמות שהמודל אומן עליהם):
+        Features required for model 1A (by the names the model was trained on):
         - Tree age, year
         - Thinning_Upper_Fruits Bunch-1, Thinning_Center_Fruits Bunch-1, Thinning_Lower_Fruits Bunch-1
         - Thinning_Bunches, Thinning_Fruits Tree-1
-        - T/H/E עבור שלוש תקופות פיזיולוגיות
+        - T/H/E for three physiological periods
         """
         age = data['tree_age']
         weather_features = data.get('weather_features', {})
 
-        # שלב 6.4.1: הכנת נתוני החקלאי
+        # Step 6.4.1: Prepare farmer data
         if data['protocol_type'] == 'general':
             p = data['thinning']
-            # בפרוטוקול כללי - אותם ערכי חנטים לכל הדורות
-            # חנטים לאשכול = סנסנים * חנטים לסנסן
+            # In general protocol - same fruitlet values for all generations
+            # Fruitlets per bunch = strands * fruitlets per strand
             fruits_per_bunch = p['branches'] * p['fronds']
             user_inputs = {
                 'branches': p['branches'],
@@ -1113,7 +1112,7 @@ class MainWindow(QMainWindow):
                 'lower_fronds': fruits_per_bunch,
             }
         else:
-            # פרוטוקול לפי דור - ערכים שונים לכל דור
+            # By generation protocol - different values for each generation
             p = data['thinning']
             user_inputs = {
                 'branches': int((p['upper']['branches'] + p['middle']['branches'] + p['lower']['branches']) / 3),
@@ -1123,7 +1122,7 @@ class MainWindow(QMainWindow):
                 'lower_fronds': p['lower']['branches'] * p['lower']['fronds'],
             }
 
-        # שלב 6.4.2: בניית וקטור הקלט למודל
+        # Step 6.4.2: Build input vector for model
         current_year = datetime.now().year
         input_df = self.data_processor.prepare_input_vector(
             user_inputs, weather_features, age, current_year
@@ -1131,32 +1130,32 @@ class MainWindow(QMainWindow):
 
         print(f"DEBUG: Input features for model: {input_df.to_dict('records')[0]}")
 
-        # שלב 6.4.3: הרצת המודל
+        # Step 6.4.3: Run the model
         if self.xgb_model is not None:
             try:
                 dmatrix = xgb.DMatrix(input_df)
                 prediction = self.xgb_model.predict(dmatrix)
                 mean_yield = float(prediction[0])
 
-                # סטיית תקן משוערת (בהתאם לאי-ודאות המודל)
-                # ניתן לשפר זאת עם quantile regression או bootstrap
-                std_yield = mean_yield * 0.15  # 15% אי-ודאות
+                # Estimated standard deviation (according to model uncertainty)
+                # This can be improved with quantile regression or bootstrap
+                std_yield = mean_yield * 0.15  # 15% uncertainty
 
-                print(f"✅ תחזית מודל XGBoost: {mean_yield:.2f} ± {std_yield:.2f} ק\"ג/עץ")
+                print(f"✅ XGBoost model prediction: {mean_yield:.2f} ± {std_yield:.2f} kg/tree")
 
             except Exception as e:
-                print(f"❌ שגיאה בהרצת המודל: {e}")
+                print(f"❌ Error running model: {e}")
                 mean_yield = self._fallback_prediction(data)
                 std_yield = mean_yield * 0.20
         else:
-            # שלב 6.4.4: חישוב גיבוי אם המודל לא נטען
+            # Step 6.4.4: Fallback calculation if model not loaded
             mean_yield = self._fallback_prediction(data)
             std_yield = mean_yield * 0.20
 
         return {'yield_mean': mean_yield, 'yield_std': std_yield}
 
     def _fallback_prediction(self, data):
-        """שלב 6.5: חיזוי גיבוי (פשוט) אם המודל לא זמין"""
+        """Step 6.5: Fallback (simple) prediction if model not available"""
         age = data['tree_age']
         if data['protocol_type'] == 'general':
             p = data['thinning']
@@ -1167,10 +1166,10 @@ class MainWindow(QMainWindow):
             avg_fronds = (p['upper']['fronds'] + p['middle']['fronds'] + p['lower']['fronds']) / 3
             fruitlets_per_tree = p['clusters'] * avg_branches * avg_fronds
 
-        # חישוב גס: 10 גרם לפרי בממוצע
-        estimated_yield = (fruitlets_per_tree * 10) / 1000  # בק"ג
+        # Rough calculation: 10 grams per fruit on average
+        estimated_yield = (fruitlets_per_tree * 10) / 1000  # in kg
 
-        # התאמה לפי גיל
+        # Adjustment by age
         if age < 5:
             estimated_yield *= 0.6
         elif age > 20:
@@ -1180,24 +1179,24 @@ class MainWindow(QMainWindow):
 
 
 # =====================================================================================
-# 5. פונקציית הרצה ראשית
+# 5. Main Entry Point Function
 # =====================================================================================
 def main():
     """
-    שלב 7: נקודת הכניסה הראשית לאפליקציה
+    Step 7: Main entry point for the application
 
-    סדר הפעולות:
-    1. יצירת אפליקציית PyQt6
-    2. החלת עיצוב RTL וסגנונות
-    3. הצגת מסך פתיחה (Splash)
-    4. טעינת החלון הראשי עם מודל XGBoost
+    Order of operations:
+    1. Create PyQt6 application
+    2. Apply LTR layout and styles
+    3. Display splash screen
+    4. Load main window with XGBoost model
     """
     app = QApplication(sys.argv)
     app.setStyleSheet(STYLES)
-    app.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
-    app.setApplicationName("מערכת תמיכת החלטה לחקלאים")
+    app.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
+    app.setApplicationName("Decision Support System for Farmers")
     app.setApplicationVersion("5.0-xgboost-model-1a")
-    app.setOrganizationName("מכון וולקני - ARO")
+    app.setOrganizationName("Volcani Center - ARO")
 
     splash = AnimatedSplashScreen()
     splash.show()

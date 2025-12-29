@@ -19,11 +19,11 @@ class NeuralNode:
         self.drift_phase = random.uniform(0, 2 * math.pi)
 
     def update(self, time):
-        # תנועה עדינה של הנוירונים
+        # Subtle movement of neurons
         self.x = self.original_x + 15 * math.sin(time * 0.001 + self.drift_phase)
         self.y = self.original_y + 10 * math.cos(time * 0.0008 + self.drift_phase)
 
-        # פעימת הנוירון
+        # Neuron pulse
         pulse = math.sin(time * 0.003 + self.pulse_phase)
         self.size = 4 + 2 * pulse
 
@@ -36,19 +36,19 @@ class AnimatedSplashScreen(QSplashScreen):
         screen_geometry = QApplication.primaryScreen().geometry()
         self.move((screen_geometry.width() - self.width()) // 2, (screen_geometry.height() - self.height()) // 2)
 
-        # נסה לטעון את הלוגו, אם לא קיים, צור Pixmap ריק
+        # Try to load the logo, if not exists, create empty Pixmap
         try:
             self.logo = QPixmap('volcani_logo.png')
         except:
             self.logo = QPixmap()
 
-        self.loading_states = ["מאתחל רכיבים...", "יוצר קשר עם השירות המטאורולוגי...", "טוען מודלים חכמים...",
-                               "בונה ממשק ויזואלי...", "כמעט סיימנו..."]
+        self.loading_states = ["Initializing components...", "Connecting to meteorological service...", "Loading smart models...",
+                               "Building visual interface...", "Almost done..."]
         self.current_state_index = 0
         self.animation_time = 0
         self.logo_pulse_phase = 0
 
-        # יצירת רשת נוירונים
+        # Create neural network
         self.create_neural_network()
 
         self.animation_timer = QTimer(self, timeout=self.update_animation)
@@ -58,28 +58,28 @@ class AnimatedSplashScreen(QSplashScreen):
         self.text_timer.start(800)
 
     def create_neural_network(self):
-        """יצירת רשת נוירונים עם קשרים ביניהם"""
+        """Create neural network with connections between nodes"""
         self.nodes = []
         self.connections = []
 
-        # יצירת נוירונים במיקומים רנדומליים
+        # Create neurons at random positions
         for _ in range(25):
             x = random.uniform(50, 550)
             y = random.uniform(50, 400)
             self.nodes.append(NeuralNode(x, y))
 
-        # יצירת קשרים בין נוירונים קרובים
+        # Create connections between nearby neurons
         for i, node1 in enumerate(self.nodes):
             for j, node2 in enumerate(self.nodes[i + 1:], i + 1):
                 distance = math.sqrt((node1.x - node2.x) ** 2 + (node1.y - node2.y) ** 2)
-                if distance < 120 and random.random() < 0.3:  # רק קשרים קרובים וסיכוי של 30%
+                if distance < 120 and random.random() < 0.3:  # Only close connections with 30% chance
                     self.connections.append((i, j, random.uniform(0, 2 * math.pi)))
 
     def update_animation(self):
         self.animation_time += 16  # 16ms per frame
         self.logo_pulse_phase = (self.logo_pulse_phase + 0.05) % (2 * math.pi)
 
-        # עדכון מיקום הנוירונים
+        # Update neuron positions
         for node in self.nodes:
             node.update(self.animation_time)
 
@@ -89,27 +89,27 @@ class AnimatedSplashScreen(QSplashScreen):
         self.current_state_index = (self.current_state_index + 1) % len(self.loading_states)
 
     def draw_neural_network(self, painter):
-        """ציור רשת הנוירונים המונפשת"""
+        """Draw the animated neural network"""
         w, h = self.width(), self.height()
 
-        # ציור הקשרים (הקווים) בין הנוירונים
+        # Draw connections (lines) between neurons
         painter.setOpacity(0.15)
         for i, j, phase in self.connections:
             node1, node2 = self.nodes[i], self.nodes[j]
 
-            # אנימציה של עוצמת הקשר
+            # Connection strength animation
             pulse = math.sin(self.animation_time * 0.002 + phase)
             alpha = int(50 + 30 * pulse)
 
-            # צבע דינמי לקשר
+            # Dynamic color for connection
             hue = (self.animation_time * 0.1 + phase * 50) % 360
             color = QColor.fromHsv(int(hue), 100, 200, alpha)
 
             painter.setPen(QPen(color, 1.5))
             painter.drawLine(int(node1.x), int(node1.y), int(node2.x), int(node2.y))
 
-            # אפקט של "פעימה" הנוסעת לאורך הקשר
-            if pulse > 0.7:  # רק כשהפעימה חזקה
+            # "Pulse" effect traveling along the connection
+            if pulse > 0.7:  # Only when pulse is strong
                 mid_x = (node1.x + node2.x) / 2
                 mid_y = (node1.y + node2.y) / 2
                 painter.setOpacity(0.6)
@@ -117,10 +117,10 @@ class AnimatedSplashScreen(QSplashScreen):
                 painter.setPen(Qt.PenStyle.NoPen)
                 painter.drawEllipse(int(mid_x - 2), int(mid_y - 2), 4, 4)
 
-        # ציור הנוירונים
+        # Draw neurons
         painter.setOpacity(0.8)
         for node in self.nodes:
-            # צבע דינמי לנוירון
+            # Dynamic color for neuron
             hue = (self.animation_time * 0.05 + node.pulse_phase * 100) % 360
             saturation = int(80 + 20 * math.sin(self.animation_time * 0.003 + node.pulse_phase))
             color = QColor.fromHsv(int(hue), saturation, 255)
@@ -130,7 +130,7 @@ class AnimatedSplashScreen(QSplashScreen):
             painter.drawEllipse(int(node.x - node.size / 2), int(node.y - node.size / 2),
                                 int(node.size), int(node.size))
 
-            # אפקט זוהר חיצוני לנוירונים פעילים
+            # External glow effect for active neurons
             if math.sin(self.animation_time * 0.004 + node.pulse_phase) > 0.5:
                 painter.setOpacity(0.3)
                 painter.setBrush(QColor(255, 255, 255))
@@ -146,18 +146,18 @@ class AnimatedSplashScreen(QSplashScreen):
 
         w, h = self.width(), self.height()
 
-        # רקע גרדיאנט גוונים כהים של כחול
+        # Background gradient with dark blue tones
         gradient = QLinearGradient(0, 0, w, h)
-        gradient.setColorAt(0, QColor('#1a1a2e'))  # כחול כהה מאוד
-        gradient.setColorAt(0.3, QColor('#16213e'))  # כחול כהה עמוק
-        gradient.setColorAt(0.7, QColor('#0f3460'))  # כחול כהה ים
-        gradient.setColorAt(1, QColor('#0e4b99'))  # כחול כהה מעט בהיר יותר
+        gradient.setColorAt(0, QColor('#1a1a2e'))  # Very dark blue
+        gradient.setColorAt(0.3, QColor('#16213e'))  # Deep dark blue
+        gradient.setColorAt(0.7, QColor('#0f3460'))  # Dark sea blue
+        gradient.setColorAt(1, QColor('#0e4b99'))  # Slightly lighter dark blue
         painter.fillRect(self.rect(), gradient)
 
-        # ציור רשת הנוירונים
+        # Draw neural network
         self.draw_neural_network(painter)
 
-        # ציור הלוגו עם אפקט הבהוב
+        # Draw logo with blinking effect
         painter.setOpacity(1.0)
         if not self.logo.isNull():
             scaled_logo = self.logo.scaled(120, 120, Qt.AspectRatioMode.KeepAspectRatio,
@@ -165,11 +165,11 @@ class AnimatedSplashScreen(QSplashScreen):
             logo_x = (w - scaled_logo.width()) // 2
             logo_y = 80
 
-            # אפקט הבהוב ללוגו
+            # Logo blinking effect
             pulse = math.sin(self.logo_pulse_phase)
             logo_opacity = 0.7 + 0.3 * pulse
 
-            # אפקט זוהר סביב הלוגו
+            # Glow effect around logo
             painter.setOpacity(0.4 * pulse)
             painter.setBrush(QColor(255, 255, 255))
             painter.setPen(Qt.PenStyle.NoPen)
@@ -178,25 +178,25 @@ class AnimatedSplashScreen(QSplashScreen):
                                 int(logo_y - (glow_size - 120) / 2),
                                 int(glow_size), int(glow_size))
 
-            # ציור הלוגו עם השקיפות המשתנה
+            # Draw logo with changing opacity
             painter.setOpacity(logo_opacity)
             painter.drawPixmap(logo_x, logo_y, scaled_logo)
 
-        # טקסט כותרת עם אפקט צל
+        # Title text with shadow effect
         painter.setOpacity(1.0)
         painter.setPen(QColor('white'))
         painter.setFont(QFont('Inter', 24, QFont.Weight.Black))
         painter.setOpacity(0.3)
-        painter.drawText(QRect(52, 222, 500, 40), Qt.AlignmentFlag.AlignCenter, 'מערכת AI לחקלאים')
+        painter.drawText(QRect(52, 222, 500, 40), Qt.AlignmentFlag.AlignCenter, 'AI System for Farmers')
         painter.setOpacity(1.0)
-        painter.drawText(QRect(50, 220, 500, 40), Qt.AlignmentFlag.AlignCenter, 'מערכת AI לחקלאים')
+        painter.drawText(QRect(50, 220, 500, 40), Qt.AlignmentFlag.AlignCenter, 'AI System for Farmers')
 
-        # תת כותרת
+        # Subtitle
         painter.setFont(QFont('Inter', 16, QFont.Weight.Medium))
         painter.setOpacity(0.9)
-        painter.drawText(QRect(50, 260, 500, 30), Qt.AlignmentFlag.AlignCenter, 'טכנולוגיה מתקדמת לחקלאות חכמה')
+        painter.drawText(QRect(50, 260, 500, 30), Qt.AlignmentFlag.AlignCenter, 'Advanced Technology for Smart Agriculture')
 
-        # מחוון טעינה מעגלי מונפש
+        # Animated circular loading indicator
         painter.save()
         painter.translate(w // 2, h - 100)
         colors = [QColor('#FF6B6B'), QColor('#4ECDC4'), QColor('#45B7D1'), QColor('#96CEB4')]
@@ -205,7 +205,7 @@ class AnimatedSplashScreen(QSplashScreen):
             rotation_speed = 2 + i * 0.5
             painter.rotate(self.animation_time * 0.01 * rotation_speed * ((-1) ** i))
 
-            # שינוי עוצמת הצבע בהתאם לזמן
+            # Color intensity change according to time
             alpha = int(150 + 100 * math.sin(self.animation_time * 0.003 + i))
             color.setAlpha(alpha)
 
@@ -215,20 +215,20 @@ class AnimatedSplashScreen(QSplashScreen):
             painter.drawArc(-25, -25, 50, 50, start_angle, span_angle)
         painter.restore()
 
-        # טקסט מצב הטעינה
+        # Loading state text
         painter.setFont(QFont('Inter', 13, QFont.Weight.Medium))
         painter.setOpacity(0.8)
         painter.drawText(QRect(50, h - 50, 500, 25), Qt.AlignmentFlag.AlignCenter,
                          self.loading_states[self.current_state_index])
 
 
-# דוגמה לשימוש
+# Usage example
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     splash = AnimatedSplashScreen()
     splash.show()
 
-    # הצגת מסך הפתיחה למשך 5 שניות
+    # Show splash screen for 5 seconds
     QTimer.singleShot(5000, splash.close)
     QTimer.singleShot(5000, app.quit)
 
