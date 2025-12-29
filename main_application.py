@@ -696,9 +696,9 @@ class DataEntryPage(QWidget):
         self.clusters_count_general = QLineEdit("")
         self.clusters_count_general.setValidator(QIntValidator(1, 500))
         self.clusters_count_general.setPlaceholderText("לדוגמה: 8")
-        general_layout.addRow("מספר סנסנים לאשכול:", self.branches_count_general)
-        general_layout.addRow("מספר חנטים לסנסן:", self.fronds_count_general)
-        general_layout.addRow("מספר אשכולות:", self.clusters_count_general)
+        general_layout.addRow("מס' ממוצע סנסנים לאשכול:", self.branches_count_general)
+        general_layout.addRow("מס' ממוצע חנטים לסנסן:", self.fronds_count_general)
+        general_layout.addRow("מס' אשכולות כולל:", self.clusters_count_general)
         tab_widget.addTab(general_tab, "פרוטוקול כללי")
 
         # טאב פרוטוקול לפי דור
